@@ -1,6 +1,6 @@
 // Plein écran des vidéos : certaines applications gardent les proportions de leur fenêtre (une vidéo dans QuickTime).
 // Agrandie par Square, une telle fenêtre ne remplit pas tout l'écran, et l'on voit les autres applications autour.
-// Square la centre alors, et pose derrière elle un fond noir sur tout l'écran, comme un vrai plein écran.
+// Square la colle en haut de l'écran, et pose derrière elle un fond noir sur tout l'écran, comme un vrai plein écran.
 // Le fond n'est là que tant que cette fenêtre est devant ; un clic sur le fond la ramène devant.
 import AppKit
 
@@ -24,9 +24,10 @@ enum FondNoir {
             guard _AXUIElementGetWindow(el, &wid) == .success, AXUIElementGetPid(el, &pid) == .success, let c = AX.cadre(el) else { return }
             let manque = zone.width - c.width > 16 || zone.height - c.height > 16
             guard manque, c.width >= 320, c.height >= 200 else { oublier(wid); return }
-            AX.placer(el, CGRect(x: (zone.midX - c.width / 2).rounded(), y: (zone.midY - c.height / 2).rounded(), width: c.width, height: c.height))
+            // Collée en haut de l'écran (centrée en largeur) : la bande noire reste en bas.
+            AX.placer(el, CGRect(x: (zone.midX - c.width / 2).rounded(), y: zone.minY, width: c.width, height: c.height))
             suivies[wid] = pid
-            journal("Square: fenêtre %d aux proportions fixes, centrée sur un fond noir", Int(wid))
+            journal("Square: fenêtre %d aux proportions fixes, collée en haut sur un fond noir", Int(wid))
             demarrer()
             maj()
         }
