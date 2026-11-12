@@ -111,6 +111,9 @@ enum Relevé {
         let moi = ProcessInfo.processInfo.processIdentifier
         var apps: [pid_t: NSRunningApplication] = [:]
         for a in NSWorkspace.shared.runningApplications where a.activationPolicy == .regular { apps[a.processIdentifier] = a }
+        // Side n'a pas de fenêtre à ranger, sauf une : la vidéo qu'il sort de son tiroir en plein écran. Il en donne le numéro.
+        let videoSide = Relevé.videoDeSide(parId)
+        if let v = videoSide { apps[v.pid] = v.app }
 
         var espaces: [Espace] = []
         var courants: [String: UInt64] = [:]
@@ -134,6 +137,7 @@ enum Relevé {
                     guard let i = parId[w],
                           (i[kCGWindowLayer as String] as? Int) == 0,
                           let pid = i[kCGWindowOwnerPID as String] as? pid_t, pid != moi, let app = apps[pid],
+                          app.activationPolicy == .regular || w == videoSide?.wid,
                           !masquee || app.isHidden,                 // une fenêtre réduite dans le Dock ne compte pas
                           let d = i[kCGWindowBounds as String] as? NSDictionary,
                           let cadre = CGRect(dictionaryRepresentation: d),
@@ -166,6 +170,27 @@ enum Relevé {
     }
 
     static func espaceCourant(ecran: String) -> UInt64? { tout().courants[ecran] }
+
+    static let side = "com.gauthieraube.side"
+    /// La fenêtre de la vidéo que Side affiche en grand (réglage `videoPleinEcran` de Side), si elle existe bien et lui appartient.
+    static func videoDeSide(_ parId: [CGWindowID: [String: Any]]) -> (wid: CGWindowID, pid: pid_t, app: NSRunningApplication)? {
+        CFPreferencesAppSynchronize(side as CFString)
+        guard let n = CFPreferencesCopyAppValue("videoPleinEcran" as CFString, side as CFString) as? Int, n > 0,
+              let i = parId[CGWindowID(n)], let pid = i[kCGWindowOwnerPID as String] as? pid_t,
+              let app = NSRunningApplication(processIdentifier: pid), app.bundleIdentifier == side else { return nil }
+        return (CGWindowID(n), pid, app)
+    }
+    /// Side dit-il avoir une vidéo en grand ? (Sans vérifier la fenêtre : pour les tests rapides.)
+    static var videoDeSideAnnoncee: Bool {
+        ((CFPreferencesCopyAppValue("videoPleinEcran" as CFString, side as CFString) as? Int) ?? 0) > 0
+    }
+    /// Ferme une fenêtre par son bouton rouge, sans quitter l'application.
+    static func fermerFenetre(pid: pid_t, wid: CGWindowID) {
+        guard let el = AX.fenetre(pid: pid, wid: wid) else { return }
+        var bouton: CFTypeRef?
+        AXUIElementCopyAttributeValue(el, kAXCloseButtonAttribute as CFString, &bouton)
+        if let bouton, CFGetTypeID(bouton) == AXUIElementGetTypeID() { AXUIElementPerformAction(bouton as! AXUIElement, kAXPressAction as CFString) }
+    }
 }
 
 // MARK: - Accessibilité : retrouver, placer, agrandir une fenêtre
@@ -2254,20 +2279,26 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func fermer(_ t: Tuile) {
         guard let app = NSRunningApplication(processIdentifier: t.pid) else { return }
-        // Le Finder ne se quitte pas : on ferme simplement sa fenêtre.
-        if app.bundleIdentifier == "com.apple.finder", case .fenetre(let f, _) = t.cible, let el = AX.fenetre(pid: f.pid, wid: f.wid) {
-            var bouton: CFTypeRef?
-            AXUIElementCopyAttributeValue(el, kAXCloseButtonAttribute as CFString, &bouton)
-            if let bouton, CFGetTypeID(bouton) == AXUIElementGetTypeID() { AXUIElementPerformAction(bouton as! AXUIElement, kAXPressAction as CFString) }
+        // Le Finder ne se quitte pas : on ferme simplement sa fenêtre. Side non plus : sa vidéo en grand retourne dans son tiroir.
+        func seFerme(_ a: NSRunningApplication?) -> Bool { a?.bundleIdentifier == "com.apple.finder" || a?.bundleIdentifier == Relevé.side }
+        let finder = seFerme(app)
+        if finder {
+            switch t.cible {
+            case .fenetre(let f, _): Relevé.fermerFenetre(pid: f.pid, wid: f.wid)
+            case .groupe(let fs, _): for f in fs where f.pid == t.pid { Relevé.fermerFenetre(pid: f.pid, wid: f.wid) }
+            case .espace: break
+            }
         } else {
             app.terminate()
         }
         // Les cases de l'application quittent la grille tout de suite, et les autres se resserrent en douceur.
-        let finder = app.bundleIdentifier == "com.apple.finder"
         var pidsPartis: Set<pid_t> = finder ? [] : [t.pid]
         if case .groupe(let fs, _) = t.cible {
             // Une case de groupe : toutes ses applications se ferment.
-            for f in fs where f.pid != t.pid { NSRunningApplication(processIdentifier: f.pid)?.terminate(); pidsPartis.insert(f.pid) }
+            for f in fs where f.pid != t.pid {
+                let a = NSRunningApplication(processIdentifier: f.pid)
+                if seFerme(a) { Relevé.fermerFenetre(pid: f.pid, wid: f.wid) } else { a?.terminate(); pidsPartis.insert(f.pid) }
+            }
         }
         let parties = Set(tuiles.filter { $0.cle == t.cle || pidsPartis.contains($0.pid) }.map { $0.cle })
         tuiles.removeAll { parties.contains($0.cle) }
@@ -2299,7 +2330,8 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func appActivée(_ note: Notification) {
         guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
-              app.activationPolicy == .regular, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
+              app.activationPolicy == .regular || (app.bundleIdentifier == Relevé.side && Relevé.videoDeSideAnnoncee),
+              app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
         if app.processIdentifier != pidDevant { pidAvant = pidDevant; pidDevant = app.processIdentifier }
     }
 }

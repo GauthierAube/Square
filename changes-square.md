@@ -2,6 +2,11 @@
 
 Les dernières modifications sont en haut.
 
+## 13 novembre 2026 : la vidéo en plein écran de Side
+
+- Quand Side sort une vidéo YouTube de son tiroir en plein écran, Square range sa fenêtre comme celle d'une application : grille, carrousel, ⌘1 à ⌘9, écran partagé. Les autres fenêtres de Side restent ignorées.
+- Fermer cette case (croix, deux doigts vers le haut) ramène la vidéo dans le tiroir au lieu de quitter Side.
+
 ## 12 novembre 2026 (nuit) : glisser une case entre deux autres
 
 - Dans la grille, lâcher une case dans l'espace entre deux vignettes (ou au bout d'une rangée) la glisse à cet endroit : les autres se poussent. Avant, il ne se passait rien hors d'une vignette.
