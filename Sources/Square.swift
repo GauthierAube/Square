@@ -769,6 +769,7 @@ final class Grille: NSView {
     var auFermer: ((Tuile) -> Void)?
     var auDepot: ((Tuile, Depot) -> Void)?
     private var animeDisposition = false
+    let dock = DockGrille(frame: .zero)
 
     /// Des fenêtres ont quitté la grille : leurs cases disparaissent et les autres glissent en douceur vers leur nouvelle place
     /// (et leur nouvelle taille, si la grille a perdu une colonne ou une ligne).
@@ -808,6 +809,7 @@ final class Grille: NSView {
         wantsLayer = true
         layer?.contentsGravity = .resizeAspectFill
         layer?.backgroundColor = NSColor(white: 0.08, alpha: 1).cgColor
+        addSubview(dock)
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -891,6 +893,7 @@ final class Grille: NSView {
     func charger(_ tuiles: [Tuile], courante: String?, espaces: [Espace]) {
         zoom?.removeFromSuperlayer()
         zoom = nil
+        vedette = nil
         cases.forEach { $0.removeFromSuperview() }
         cases = tuiles.enumerated().map { i, t in
             let c = Case(tuile: t, numero: i + 1)
@@ -911,6 +914,17 @@ final class Grille: NSView {
 
     override func layout() {
         super.layout()
+        // Le Dock couvre toute la grille (il laisse passer les clics hors de sa pastille) ; les cases occupent la place
+        // qui reste, du côté opposé au sien.
+        dock.frame = bounds
+        let reserve = dock.reserve
+        var zone = bounds
+        switch DockGrille.cote {
+        case "haut": zone.size.height -= reserve
+        case "gauche": zone.origin.x += reserve; zone.size.width -= reserve
+        case "droite": zone.size.width -= reserve
+        default: zone.origin.y += reserve; zone.size.height -= reserve
+        }
         // Une vraie grille, aérée : chaque fenêtre a sa case fixe, une case sans fenêtre reste vide.
         guard !cases.isEmpty else { return }
         let positions = cases.map { Grille.position($0.tuile.place) }
@@ -919,14 +933,14 @@ final class Grille: NSView {
         let margeX = bounds.width * 0.045, margeY = bounds.height * 0.04
         let ecartX = bounds.width * 0.035, ecartY = bounds.height * 0.04
         let pied: CGFloat = 26                               // la place de l'icône qui dépasse sous la vignette
-        let largeurMax = (bounds.width - 2 * margeX - CGFloat(colonnes - 1) * ecartX) / CGFloat(colonnes)
-        let hauteurMax = (bounds.height - 2 * margeY - CGFloat(lignes - 1) * ecartY) / CGFloat(lignes) - pied
+        let largeurMax = (zone.width - 2 * margeX - CGFloat(colonnes - 1) * ecartX) / CGFloat(colonnes)
+        let hauteurMax = (zone.height - 2 * margeY - CGFloat(lignes - 1) * ecartY) / CGFloat(lignes) - pied
         // Des cases aux proportions de l'écran, aussi grandes que possible, et la grille entière centrée.
         let format = bounds.width / max(bounds.height, 1)
         let largeur = min(largeurMax, hauteurMax * format), hauteur = largeur / format + pied
         let totalL = CGFloat(colonnes) * largeur + CGFloat(colonnes - 1) * ecartX
         let totalH = CGFloat(lignes) * hauteur + CGFloat(lignes - 1) * ecartY
-        let x0 = bounds.midX - totalL / 2, sommet = bounds.midY + totalH / 2
+        let x0 = zone.midX - totalL / 2, sommet = zone.midY + totalH / 2
         func cadre(_ p: (colonne: Int, ligne: Int)) -> NSRect {
             NSRect(x: x0 + CGFloat(p.colonne) * (largeur + ecartX),
                    y: sommet - CGFloat(p.ligne + 1) * hauteur - CGFloat(p.ligne) * ecartY, width: largeur, height: hauteur)
@@ -962,6 +976,13 @@ final class Grille: NSView {
     func majSurvol() {
         guard let w = window else { return }
         let p = convert(w.mouseLocationOutsideOfEventStream, from: nil)
+        // La souris reprend la main sur la molette, mais seulement si elle a vraiment bougé : tourner la molette la fait
+        // toujours trembler d'un ou deux points, ce qui ramenait la mise en avant sous le pointeur.
+        if vedette != nil {
+            let ici = NSEvent.mouseLocation
+            if hypot(ici.x - sourisVedette.x, ici.y - sourisVedette.y) < 18 { return }
+            vedette = nil
+        }
         for c in cases { let s = c.frame.contains(p); if c.survol != s { c.survol = s } }
         // Au-dessus d'une séparation entre deux fenêtres d'un groupe, le pointeur montre qu'on peut la tirer.
         var curseur = NSCursor.arrow
@@ -987,8 +1008,58 @@ final class Grille: NSView {
     private var montee: CGFloat = 0
     private var baseBalayee = CGRect.zero
 
+    // MARK: La molette de la souris parcourt les cases, en boucle
+
+    /// La case mise en avant par la molette (nil : aucune). Un clic, Entrée ou le clic de la molette la choisit.
+    private(set) var vedette: Case?
+    private var cumulMolette: CGFloat = 0
+    private var dernierCran: TimeInterval = 0
+    private var sourisVedette = CGPoint.zero
+
+    /// Avance la mise en avant d'une case, dans un sens ou dans l'autre. Après la dernière, on revient à la première.
+    private func avancerVedette(_ d: Int) {
+        guard !cases.isEmpty else { return }
+        let depart = vedette ?? cases.first(where: { $0.survol }) ?? cases.first(where: { $0.courant })
+        var i = depart.flatMap { c in cases.firstIndex { $0 === c } } ?? (d > 0 ? -1 : 0)
+        i = ((i + d) % cases.count + cases.count) % cases.count
+        vedette = cases[i]
+        sourisVedette = NSEvent.mouseLocation
+        for c in cases { let s = c === vedette; if c.survol != s { c.survol = s } }
+    }
+
+    /// Choisit la case mise en avant par la molette, s'il y en a une.
+    @discardableResult
+    func choisirVedette() -> Bool {
+        guard let c = vedette, zoom == nil else { return false }
+        vedette = nil
+        auChoix?(c)
+        return true
+    }
+
+    override func otherMouseUp(with event: NSEvent) { choisirVedette() }      // clic de la molette
+
     override func scrollWheel(with event: NSEvent) {
         guard zoom == nil, volante == nil else { return }
+        // Une molette de souris n'a pas de « phase », contrairement au trackpad : elle fait défiler la mise en avant.
+        if event.phase.isEmpty, event.momentumPhase.isEmpty {
+            let dy = event.scrollingDeltaY
+            guard dy != 0 else { return }
+            // La molette envoie beaucoup de petits mouvements, surtout lancée : on les cumule, et on n'avance que d'une case
+            // à la fois, pas plus de sept fois par seconde.
+            cumulMolette += event.hasPreciseScrollingDeltas ? dy : dy * 10
+            let seuil: CGFloat = 70
+            guard abs(cumulMolette) >= seuil else { return }
+            let maintenant = ProcessInfo.processInfo.systemUptime
+            if maintenant - dernierCran >= 0.14 {
+                avancerVedette(cumulMolette < 0 ? 1 : -1)
+                dernierCran = maintenant
+                // Une ligne par cran dans le journal, pour régler la molette sur de vrais mouvements.
+                journal("Square: molette dans la grille — cran %@ (cumul %.0f, %@)", cumulMolette < 0 ? "suivant" : "précédent",
+                        Double(cumulMolette), event.hasPreciseScrollingDeltas ? "fin" : "par lignes")
+            }
+            cumulMolette = 0
+            return
+        }
         let p = convert(event.locationInWindow, from: nil)
         if event.phase == .began {
             balayee = cases.first { $0.frame.contains(p) }
@@ -1012,6 +1083,20 @@ final class Grille: NSView {
             }) { [weak self] in if partie { self?.auFermer?(c.tuile) } }
         }
     }
+
+    /// Clic droit sur une case : quitter l'application.
+    override func rightMouseDown(with event: NSEvent) {
+        let p = convert(event.locationInWindow, from: nil)
+        guard let c = cases.first(where: { $0.frame.contains(p) }) else { return }
+        clicDroitSur = c.tuile
+        let menu = NSMenu()
+        let item = menu.addItem(withTitle: "Quitter \(c.tuile.titre.components(separatedBy: " — ").first ?? "l'application")",
+                                action: #selector(quitterLaCase), keyEquivalent: "")
+        item.target = self
+        NSMenu.popUpContextMenu(menu, with: event, for: self)
+    }
+    private var clicDroitSur: Tuile?
+    @objc private func quitterLaCase() { if let t = clicDroitSur { clicDroitSur = nil; auFermer?(t) } }
 
     override func mouseDown(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
@@ -1082,6 +1167,26 @@ final class Grille: NSView {
         r.c.tuile = t
         r.c.montrer(Images.commun.image(pour: t, espaces: []))
     }
+
+    /// La case transportée prend la place d'une autre ; celles qui se trouvent entre les deux glissent d'un cran.
+    private func inserer(_ c: Case, aLaPlaceDe cible: Case) {
+        var ordre = cases.sorted { $0.tuile.place < $1.tuile.place }
+        let places = ordre.map { $0.tuile.place }                  // les mêmes cases de la grille, redistribuées
+        guard let de = ordre.firstIndex(where: { $0 === c }), let vers = ordre.firstIndex(where: { $0 === cible }) else { return }
+        ordre.remove(at: de)
+        ordre.insert(c, at: vers)
+        for (x, place) in zip(ordre, places) { x.tuile.place = place }
+        ordreChange = true
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.26
+            ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.9, 0.3, 1)
+            animeDisposition = true
+            needsLayout = true
+            layoutSubtreeIfNeeded()
+            animeDisposition = false
+        }
+    }
+    private var ordreChange = false
 
     /// On tire une case : sa vignette suit la souris. Au-dessus d'une autre case, un repère orange montre ce qui se passera
     /// si on lâche : toute la vignette (échange des places) ou une moitié (partage de l'écran de ce côté).
@@ -1173,8 +1278,14 @@ final class Grille: NSView {
                 else if rxv > 0.73 { zone.origin.x = cadreVisee.midX; zone.size.width /= 2; depot = .partager(f, .droite) }
                 else if ryv > 0.73 { zone.origin.y = cadreVisee.midY; zone.size.height /= 2; depot = .partager(f, .haut) }
                 else { zone.size.height /= 2; depot = .partager(f, .bas) }
-            } else { depot = sortDUnGroupe ? .separer(nil) : .echanger(cible.tuile) }
-            if case .separer = depot { zone = .zero }
+            } else if sortDUnGroupe { depot = .separer(nil); zone = .zero }
+            else {
+                // Au milieu d'une autre case : comme sur iPhone, la case transportée prend cette place tout de suite
+                // et les autres se poussent pour lui faire de la place.
+                CATransaction.commit()
+                inserer(c, aLaPlaceDe: cible)
+                return
+            }
             repere.frame = zone
             repere.isHidden = false
         } else if let vide = videsActuelles.first(where: { $0.cadre.contains(p) }) {
@@ -1209,17 +1320,39 @@ final class Grille: NSView {
                 if let r = restante { lachers[restanteWid] = r.frame }
             }
             restante?.removeFromSuperlayer(); restante = nil
-            volante?.removeFromSuperlayer(); volante = nil
             repere.removeFromSuperlayer()
-            c.alphaValue = 1
             prise = nil
             let transportee = source ?? c.tuile
             source = nil; sortDUnGroupe = false
-            if let d = depot { depot = nil; auDepot?(transportee, d) }
+            let reordonne = ordreChange
+            ordreChange = false
+            if let d = depot {
+                volante?.removeFromSuperlayer(); volante = nil
+                c.alphaValue = 1
+                depot = nil
+                auDepot?(transportee, d)
+            } else if let v = volante {
+                // Lâchée sans autre effet : la vignette rejoint sa case en douceur (sa nouvelle case, si l'ordre a changé).
+                volante = nil
+                CATransaction.begin()
+                CATransaction.setAnimationDuration(0.2)
+                CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(controlPoints: 0.25, 0.9, 0.3, 1))
+                CATransaction.setCompletionBlock { [weak self] in
+                    v.removeFromSuperlayer()
+                    c.alphaValue = 1
+                    guard let self, reordonne else { return }
+                    self.auDepot?(transportee, .ordre(Dictionary(uniqueKeysWithValues: self.cases.map { ($0.tuile.cle, $0.tuile.place) })))
+                }
+                v.frame = c.cadreVignette.offsetBy(dx: c.frame.minX, dy: c.frame.minY)
+                v.opacity = 1
+                CATransaction.commit()
+            }
             return
         }
         prise = nil
         source = nil; sortDUnGroupe = false
+        // Une case mise en avant par la molette : un clic, où qu'il soit, la choisit.
+        if choisirVedette() { return }
         if let c = cases.first(where: { $0.frame.contains(p) }) { auChoix?(c) }
         else { auFond?() }
     }
@@ -1348,12 +1481,42 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         grille.auFond = { [weak self] in self?.fermerGrilleEnRevenant() }
         grille.auFermer = { [weak self] t in self?.fermer(t) }
         grille.auDepot = { [weak self] t, d in self?.deposer(t, d) }
+        grille.dock.auLancement = { [weak self] chemin in self?.lancerDepuisLeDock(chemin) }
+        grille.dock.auBoutonApps = { [weak self] in self?.basculerLanceur() }
+        grille.dock.auCorbeille = { [weak self] in
+            self?.fermerGrille()
+            // Avec Side (dans une version qui accepte les commandes), la corbeille s'ouvre dans sa carte. Sinon, dans le Finder.
+            let side = "com.gauthieraube.side"
+            let accepte = (CFPreferencesCopyAppValue("commandesExterieures" as CFString, side as CFString) as? Bool) == true
+            if accepte, !NSRunningApplication.runningApplications(withBundleIdentifier: side).isEmpty {
+                DistributedNotificationCenter.default().postNotificationName(.init(side + ".commande"), object: "corbeille",
+                                                                             userInfo: nil, deliverImmediately: true)
+            } else if let corbeille = FileManager.default.urls(for: .trashDirectory, in: .userDomainMask).first {
+                NSWorkspace.shared.open(corbeille)
+            }
+        }
+        grille.dock.auQuitter = { [weak self] chemin in self?.quitterDepuisLeDock(chemin) }
+        Lanceur.commun.auChoix = { [weak self] chemin in self?.lancerDepuisLeDock(chemin) }
+        Lanceur.commun.auDock = { [weak self] in self?.grille.dock.charger(); self?.grille.needsLayout = true }
+        Lanceur.commun.aLaFermeture = { [weak self] in
+            self?.lanceurFermeA = Date()
+            // Les chiffres et Échap de la grille reprennent du service.
+            if let e = self?.ecouteLanceur { NSEvent.removeMonitor(e) }
+            self?.ecouteLanceur = nil
+            if self?.panneau?.isVisible == true { self?.brancherTouchesGrille() }
+        }
 
         brancherRaccourci()
         AgrandirAuto.demarrer()
         BoutonVert.demarrer()
         Glisse.demarrer()
         Coin.demarrer()
+        brancherRaccourcisDirects()
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(ouvrirReglages),
+                                                            name: .init("com.gauthieraube.square.reglages"), object: nil)
+        // Commandes venues d'une autre application (Mulot, pour les boutons de la souris).
+        DistributedNotificationCenter.default().addObserver(self, selector: #selector(commandeExterieure(_:)),
+                                                            name: .init("com.gauthieraube.square.commande"), object: nil)
         Touches.ajouter(idAgrandir, touche: UInt32(kVK_Return), modifs: UInt32(controlKey | optionKey)) { Agrandir.fenetreActive() }
 
         pidDevant = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0
@@ -1361,6 +1524,8 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         centre.addObserver(self, selector: #selector(espaceChangé), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         centre.addObserver(self, selector: #selector(appActivée(_:)), name: NSWorkspace.didActivateApplicationNotification, object: nil)
 
+        // Première ouverture : la présentation de Square.
+        if !Accueil.vu { DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { Accueil.montrer() } }
         // Autorisations demandées une fois : Accessibilité (pour déplacer les fenêtres) et Enregistrement de l'écran (pour les images).
         let cle = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         _ = AXIsProcessTrustedWithOptions([cle: true] as CFDictionary)
@@ -1378,53 +1543,12 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
             i.target = self
             return i
         }
-        _ = ajouter("Afficher la grille", #selector(basculerGrille))
-        menu.addItem(.separator())
+        // Le menu ne garde que les actions ; tous les réglages sont dans la fenêtre « Réglages… ».
+        _ = ajouter("Afficher la grille  (\(Raccourci.actuel.nom))", #selector(basculerGrille))
         _ = ajouter("Agrandir la fenêtre en cours  (⌃⌥ Entrée)", #selector(agrandirActive))
-        _ = ajouter("Remplacer les plein écran d'Apple par des fenêtres agrandies", #selector(convertir))
-        let vert = ajouter("Bouton vert : faux plein écran  (Maj + clic : plein écran d'Apple)", #selector(basculerBoutonVert))
-        vert.state = BoutonVert.actif ? .on : .off
-        let glisse = ajouter("Quatre doigts vers la gauche ou la droite : application suivante ou précédente", #selector(basculerGlisse))
-        glisse.state = Glisse.actif ? .on : .off
-        let sens = ajouter("Inverser le sens du glissement à quatre doigts", #selector(basculerSensGlisse))
-        sens.state = Glisse.inverse ? .on : .off
-        sens.isEnabled = Glisse.actif
-        let coins = NSMenu()
-        for (code, nom) in Coin.noms {
-            let item = ajouter(nom, #selector(choisirCoin(_:)), à: coins)
-            item.representedObject = code
-            item.state = Coin.choix == code ? .on : .off
-        }
-        _ = ajouter("Resserrer la grille (supprimer les cases vides)", #selector(resserrerGrille))
-        let parentCoins = menu.addItem(withTitle: "Coin de l'écran qui affiche la grille", action: nil, keyEquivalent: "")
-        parentCoins.submenu = coins
-        let autoAgrandir = ajouter("Agrandir toute seule chaque nouvelle fenêtre", #selector(basculerAgrandirAuto))
-        autoAgrandir.state = AgrandirAuto.actif ? .on : .off
-        // Les applications à laisser tranquilles : celles qui sont ouvertes, plus celles déjà cochées.
-        let sauf = NSMenu()
-        let exceptions = AgrandirAuto.exceptions
-        var listées: [(String, String)] = []
-        for a in NSWorkspace.shared.runningApplications where a.activationPolicy == .regular {
-            guard let b = a.bundleIdentifier, b != Bundle.main.bundleIdentifier, !listées.contains(where: { $0.0 == b }) else { continue }
-            listées.append((b, a.localizedName ?? b))
-        }
-        for b in exceptions where !listées.contains(where: { $0.0 == b }) {
-            let nom = NSWorkspace.shared.urlForApplication(withBundleIdentifier: b).map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? b
-            listées.append((b, nom))
-        }
-        for (b, nom) in listées.sorted(by: { $0.1.localizedCaseInsensitiveCompare($1.1) == .orderedAscending }) {
-            let item = ajouter(nom, #selector(basculerException(_:)), à: sauf)
-            item.representedObject = b
-            item.state = exceptions.contains(b) ? .on : .off
-        }
-        let parentSauf = menu.addItem(withTitle: "Ne jamais agrandir toute seule", action: nil, keyEquivalent: "")
-        parentSauf.submenu = sauf
-        parentSauf.isEnabled = AgrandirAuto.actif
         menu.addItem(.separator())
-        _ = ajouter("Taille du carrousel…", #selector(reglerCarrousel))
-        _ = ajouter("Raccourci : \(Raccourci.actuel.nom) — changer…", #selector(changerRaccourci))
-        let auto = ajouter("Lancer à l'ouverture du Mac", #selector(basculerAuto))
-        auto.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        let reglages = ajouter("Réglages…", #selector(ouvrirReglages))
+        reglages.keyEquivalent = ","
         if !AXIsProcessTrusted() || !Images.autorisé {
             menu.addItem(.separator())
             if !AXIsProcessTrusted() { _ = ajouter("Autoriser « Accessibilité »…", #selector(ouvrirAccessibilité)) }
@@ -1439,16 +1563,106 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { Agrandir.fenetreActive() }
     }
 
-    @objc private func convertir() { Agrandir.convertirTout() }
 
-    @objc private func basculerAgrandirAuto() { AgrandirAuto.actif.toggle() }
 
-    @objc private func basculerBoutonVert() { BoutonVert.actif.toggle() }
 
-    @objc private func basculerGlisse() { Glisse.actif.toggle() }
-    @objc private func basculerSensGlisse() { Glisse.inverse.toggle() }
+    @objc private func ouvrirReglages() {
+        fermerGrille()          // la grille flotte au-dessus de tout : la fenêtre de réglages resterait cachée derrière
+        Reglages.ouvrir()
+    }
 
-    @objc private func choisirCoin(_ item: NSMenuItem) { if let c = item.representedObject as? String { Coin.choix = c } }
+    // MARK: Raccourcis directs : une touche et un chiffre pour aller droit à la fenêtre de ce numéro
+
+    /// La touche à tenir avec le chiffre : "cmd", "opt", "ctrl", ou "aucun" pour ne pas avoir ces raccourcis.
+    static var toucheDirecte: String {
+        get { UserDefaults.standard.string(forKey: "raccourcisDirects") ?? "cmd" }
+        set { UserDefaults.standard.set(newValue, forKey: "raccourcisDirects") }
+    }
+
+    /// (Ré)enregistre les neuf raccourcis, d'après le réglage.
+    func brancherRaccourcisDirects() {
+        for i in 0..<9 { Touches.retirer(UInt32(200 + i)) }
+        let modifs: Int
+        switch Appli.toucheDirecte {
+        case "cmd": modifs = cmdKey
+        case "opt": modifs = optionKey
+        case "ctrl": modifs = controlKey
+        default: return
+        }
+        for i in 0..<9 {
+            Touches.ajouter(UInt32(200 + i), touche: UInt32(chiffres[i]), modifs: UInt32(modifs)) { [weak self] in self?.allerALaFenetre(i) }
+        }
+    }
+
+    /// Va droit à la fenêtre numéro n + 1, dans l'ordre des cases de la grille.
+    private func allerALaFenetre(_ n: Int) {
+        if panneau?.isVisible == true {
+            if grille.cases.indices.contains(n) { choisir(grille.cases[n].tuile, depuis: grille.cases[n]) }
+            return
+        }
+        let (tous, courants) = Relevé.tout()
+        let apps = construire(tous).filter { if case .espace(let e) = $0.cible { return e.pleinEcran }; return true }
+        guard apps.indices.contains(n) else { NSSound.beep(); return }
+        let ecran = Ecrans.identifiant(ecranSousLaSouris())
+        guard apps[n].cle != cléCourante(tous, courants, ecran: ecran) else { return }     // on y est déjà
+        journal("Square: raccourci %d → %@", n + 1, apps[n].titre.components(separatedBy: " — ").first ?? "")
+        espaces = tous
+        Bascule.aller(apps[n], espaces: tous)
+    }
+
+    /// Une autre application demande une action de Square : « grille », « suivante », « precedente » ou « agrandir ».
+    @objc private func commandeExterieure(_ note: Notification) {
+        guard let commande = note.object as? String else { return }
+        if !commande.hasPrefix("carrousel:suivre") { journal("Square: commande reçue — %@", commande) }   // pas 60 lignes par seconde
+        switch commande {
+        case "grille": basculerGrille()
+        case "suivante": voisine(1)
+        case "precedente": voisine(-1)
+        case "agrandir": Agrandir.fenetreActive()
+        default:
+            // Le carrousel mené de l'extérieur (bouton de pouce de la souris tenu pendant qu'on la déplace, ou molette du pouce) :
+            // « carrousel:debut », « carrousel:suivre:<position> », « carrousel:fin:<position> », « carrousel:cran:<±1> ».
+            let morceaux = commande.split(separator: ":").map(String.init)
+            guard morceaux.first == "carrousel", morceaux.count >= 2 else { return }
+            let valeur = morceaux.count > 2 ? CGFloat(Double(morceaux[2]) ?? 0) : 0
+            switch morceaux[1] {
+            case "debut": carrouselDebut()
+            case "suivre": carrouselSuivre(valeur)
+            case "fin": carrouselFin(valeur)
+            case "cran": carrouselParCrans(valeur > 0 ? 1 : -1)
+            default: break
+            }
+        }
+    }
+
+    private var carrouselCrans = 0
+    private var carrouselAttente: Timer?
+
+    /// La molette du pouce : chaque cran avance le carrousel d'une fenêtre ; quand la molette s'arrête un instant,
+    /// la fenêtre du centre passe devant. On voit ainsi où l'on va, au lieu de changer de fenêtre à chaque cran.
+    private func carrouselParCrans(_ d: Int) {
+        if carrouselApps.isEmpty {
+            carrouselDebut()
+            carrouselCrans = 0
+            guard !carrouselApps.isEmpty else { return }
+        }
+        carrouselCrans = min(max(carrouselCrans + d, -carrouselDepart), carrouselApps.count - 1 - carrouselDepart)
+        Carrousel.commun.placer(CGFloat(carrouselDepart + carrouselCrans), anime: true)
+        carrouselAttente?.invalidate()
+        carrouselAttente = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            self.carrouselFin(CGFloat(self.carrouselCrans))
+            self.carrouselCrans = 0
+        }
+    }
+
+    /// Pour la fenêtre de réglages : changer le raccourci, et montrer ou cacher l'aperçu du carrousel.
+    func reglerLeRaccourci() { changerRaccourci() }
+    func apercuDuCarrousel(_ visible: Bool) {
+        if visible { apercuCarrousel(anime: !Carrousel.commun.visible) } else { Carrousel.commun.masquer() }
+    }
+
+
 
     /// La souris est arrivée dans le coin choisi : la grille s'affiche (si elle l'est déjà, rien ne change).
     func grilleParLeCoin() {
@@ -1471,20 +1685,37 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func reglerCarrousel() {
         if let w = fenetreCarrousel { w.makeKeyAndOrderFront(nil); return }
         guard let ecran = ecranSousLaSouris() else { return }
-        let w = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 420, height: 92), styleMask: [.titled, .closable],
+        let w = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 420, height: 176), styleMask: [.titled, .closable],
                         backing: .buffered, defer: false)
-        w.title = "Taille du carrousel"
+        w.title = "Carrousel à quatre doigts"
         w.isReleasedWhenClosed = false
         w.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)     // au-dessus de l'aperçu
         w.hidesOnDeactivate = false
         let petit = NSTextField(labelWithString: "Petit"), grand = NSTextField(labelWithString: "Grand")
-        petit.frame = NSRect(x: 20, y: 34, width: 44, height: 18)
-        grand.frame = NSRect(x: 362, y: 34, width: 44, height: 18)
+        petit.frame = NSRect(x: 20, y: 122, width: 44, height: 18)
+        grand.frame = NSRect(x: 362, y: 122, width: 44, height: 18)
         let curseur = NSSlider(value: Double(Carrousel.taille), minValue: Double(Carrousel.tailles.lowerBound),
                                maxValue: Double(Carrousel.tailles.upperBound), target: self, action: #selector(tailleCarrouselChangée(_:)))
         curseur.isContinuous = true
-        curseur.frame = NSRect(x: 66, y: 30, width: 290, height: 26)
-        for v in [petit, curseur, grand] as [NSView] { w.contentView?.addSubview(v) }
+        curseur.frame = NSRect(x: 66, y: 118, width: 290, height: 26)
+        let titreTaille = NSTextField(labelWithString: "Taille des cartes")
+        titreTaille.font = .systemFont(ofSize: 12, weight: .semibold)
+        titreTaille.frame = NSRect(x: 20, y: 146, width: 380, height: 18)
+        // Le délai avant d'afficher le carrousel quand le geste part vite.
+        let titreDelai = NSTextField(labelWithString: "Après un geste vif, le carrousel apparaît…")
+        titreDelai.font = .systemFont(ofSize: 12, weight: .semibold)
+        titreDelai.frame = NSRect(x: 20, y: 80, width: 380, height: 18)
+        let tot = NSTextField(labelWithString: "Vite"), tard = NSTextField(labelWithString: "Tard")
+        tot.frame = NSRect(x: 20, y: 56, width: 44, height: 18)
+        tard.frame = NSRect(x: 362, y: 56, width: 44, height: 18)
+        let delai = NSSlider(value: Glisse.attente, minValue: 0.04, maxValue: 0.35, target: self, action: #selector(delaiCarrouselChangé(_:)))
+        delai.isContinuous = true
+        delai.frame = NSRect(x: 66, y: 52, width: 290, height: 26)
+        let aide = NSTextField(wrappingLabelWithString: "Vers « Vite » : il apparaît plus tôt, mais un simple effleurement risque de l'afficher. Vers « Tard » : l'inverse.")
+        aide.font = .systemFont(ofSize: 11)
+        aide.textColor = .secondaryLabelColor
+        aide.frame = NSRect(x: 20, y: 12, width: 384, height: 32)
+        for v in [titreTaille, petit, curseur, grand, titreDelai, tot, delai, tard, aide] as [NSView] { w.contentView?.addSubview(v) }
         let v = ecran.visibleFrame
         w.setFrameOrigin(NSPoint(x: v.midX - 210, y: v.minY + 40))
         fenetreCarrousel = w
@@ -1493,6 +1724,8 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         w.makeKeyAndOrderFront(nil)
         apercuCarrousel(anime: true)
     }
+
+    @objc private func delaiCarrouselChangé(_ curseur: NSSlider) { Glisse.attente = (curseur.doubleValue * 100).rounded() / 100 }
 
     @objc private func tailleCarrouselChangée(_ curseur: NSSlider) {
         Carrousel.taille = CGFloat(curseur.doubleValue.rounded())
@@ -1523,7 +1756,7 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Les quatre doigts partent à l'horizontale : le carrousel apparaît, calé sur la fenêtre où vous êtes.
     func carrouselDebut() {
         carrouselApps = []
-        guard fenetreCarrousel == nil, panneau?.isVisible != true, let ecran = ecranSousLaSouris() else { return }
+        guard !CaptureEcran.enCours, fenetreCarrousel == nil, panneau?.isVisible != true, let ecran = ecranSousLaSouris() else { return }
         let (tous, courants) = Relevé.tout()
         let id = Ecrans.identifiant(ecran)
         // Avec plusieurs bureaux sur l'écran, c'est macOS qui glisse d'un bureau à l'autre : on ne s'en mêle pas.
@@ -1564,7 +1797,7 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Glissement à quatre doigts : passe à l'application agrandie voisine, dans l'ordre des cases de la grille.
     /// Avec plusieurs bureaux sur l'écran, c'est macOS qui glisse d'un bureau à l'autre : on ne s'en mêle pas.
     func voisine(_ sens: Int) {
-        guard panneau?.isVisible != true else { return }
+        guard panneau?.isVisible != true, !CaptureEcran.enCours else { return }
         let (espaces, courants) = Relevé.tout()
         let ecran = Ecrans.identifiant(ecranSousLaSouris())
         guard espaces.filter({ $0.ecran == ecran }).count == 1 || UserDefaults.standard.bool(forKey: "glisseToujours") else { return }
@@ -1577,13 +1810,6 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard apps.indices.contains(cible) else { NSSound.beep(); return }
         journal("Square: quatre doigts → %@", apps[cible].titre.components(separatedBy: " — ").first ?? "")
         Bascule.aller(apps[cible], espaces: espaces)
-    }
-
-    @objc private func basculerException(_ item: NSMenuItem) {
-        guard let b = item.representedObject as? String else { return }
-        var e = AgrandirAuto.exceptions
-        if e.contains(b) { e.remove(b) } else { e.insert(b) }
-        AgrandirAuto.exceptions = e
     }
 
     @objc private func basculerAuto() {
@@ -1768,6 +1994,7 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         panneau?.setFrame(ecran.frame, display: false)
         let cle = cléCourante(tous, courants, ecran: Ecrans.identifiant(ecran))
         grille.poserFond(Images.commun.fondFlou(ecran: ecran))
+        grille.dock.charger()
         grille.charger(tuiles, courante: cle, espaces: tous)
         grille.preparerApparition()
         panneau?.orderFrontRegardless()
@@ -1785,13 +2012,88 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func brancherTouchesGrille() {
         Touches.ajouter(100, touche: UInt32(kVK_Escape), modifs: 0) { [weak self] in self?.fermerGrilleEnRevenant() }
+        // Entrée choisit la case mise en avant par la molette.
+        Touches.ajouter(120, touche: UInt32(kVK_Return), modifs: 0) { [weak self] in self?.grille.choisirVedette() }
         for (i, c) in grille.cases.prefix(9).enumerated() {
             Touches.ajouter(UInt32(101 + i), touche: UInt32(chiffres[i]), modifs: 0) { [weak self] in self?.choisir(c.tuile, depuis: c) }
             Touches.ajouter(UInt32(111 + i), touche: UInt32(pavé[i]), modifs: 0) { [weak self] in self?.choisir(c.tuile, depuis: c) }
         }
     }
 
-    private func retirerTouches() { for id in 100...119 { Touches.retirer(UInt32(id)) } }
+    private func retirerTouches() { for id in 100...121 { Touches.retirer(UInt32(id)) } }
+
+    private var ecouteLanceur: Any?
+    private var lanceurFermeA = Date.distantPast
+
+    /// Clic droit sur une icône du Dock, « Quitter » : comme la croix d'une case, la grille se resserre en douceur.
+    private func quitterDepuisLeDock(_ chemin: String) {
+        guard let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleURL?.path == chemin }) else { return }
+        if let t = tuiles.first(where: { t in
+            if t.pid == app.processIdentifier { return true }
+            if case .groupe(let fs, _) = t.cible { return fs.contains { $0.pid == app.processIdentifier } }
+            return false
+        }), case .fenetre = t.cible {
+            fermer(t)
+        } else {
+            app.terminate()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.grille.dock.charger() }
+    }
+
+    /// Le bouton « Apps » du Dock : la liste de toutes les applications s'ouvre au-dessus de lui (ou se referme).
+    private func basculerLanceur() {
+        if Lanceur.commun.ouvert { Lanceur.commun.fermer(); return }
+        // Un second clic sur le bouton referme la liste : l'appui l'a déjà fermée (clic hors d'elle), le relâchement
+        // ne doit pas la rouvrir aussitôt.
+        guard Date().timeIntervalSince(lanceurFermeA) > 0.4, let ecran = panneau?.screen else { return }
+        retirerTouches()            // le clavier sert maintenant à chercher : les chiffres ne choisissent plus une case
+        let ancre = grille.dock.ancreBoutonApps
+        Lanceur.commun.ouvrir(surEcran: ecran, contre: ancre.point, cote: ancre.cote)
+        // Un clic ailleurs que dans la liste la referme.
+        ecouteLanceur = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { e in
+            if Lanceur.commun.ouvert, e.window is PanneauLanceur == false { Lanceur.commun.fermer() }
+            return e
+        }
+    }
+
+    /// Clic sur une icône du Dock de la grille : l'application déjà ouverte passe devant (sa case grandit), sinon elle se lance
+    /// (et sa fenêtre s'agrandit toute seule, comme toute nouvelle fenêtre).
+    private func lancerDepuisLeDock(_ chemin: String) {
+        if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleURL?.path == chemin }),
+           let c = grille.cases.first(where: { c in
+               if c.tuile.pid == app.processIdentifier { return true }
+               if case .groupe(let fs, _) = c.tuile.cible { return fs.contains { $0.pid == app.processIdentifier } }
+               return false
+           }) {
+            choisir(c.tuile, depuis: c)
+            return
+        }
+        journal("Square: ouverture depuis le Dock de la grille")
+        fermerGrille()
+        let config = NSWorkspace.OpenConfiguration()
+        config.activates = true
+        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: chemin), configuration: config) { [weak self] app, _ in
+            guard let app else { return }
+            DispatchQueue.main.async { self?.amenerDevant(app, essais: 40) }
+        }
+    }
+
+    /// Une application lancée depuis Square (qui n'est pas au premier plan) peut s'ouvrir derrière la fenêtre en cours :
+    /// macOS ne laisse pas toujours une application de fond en amener une autre devant. On attend donc sa fenêtre
+    /// (jusqu'à douze secondes), puis on l'amène devant nous-mêmes, comme le fait un choix dans la grille.
+    private func amenerDevant(_ app: NSRunningApplication, essais: Int) {
+        guard essais > 0, !app.isTerminated else { return }
+        let (tous, _) = Relevé.tout()
+        if let (f, e) = Bascule.fenetre(deLApp: app.processIdentifier, espaces: tous) {
+            // Déjà devant : rien à faire. Sinon on la lève.
+            if tous.first(where: { $0.id == e.id })?.fenetres.first(where: { !$0.masquee })?.wid != f.wid || !app.isActive {
+                journal("Square: %@ amenée devant après son lancement", f.app)
+                Bascule.montrer(f, dans: e)
+            }
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in self?.amenerDevant(app, essais: essais - 1) }
+    }
 
     /// Une case a été lâchée dans la grille : échange de places, nouvelle place, ou partage de l'écran.
     private func deposer(_ t: Tuile, _ d: Depot) {
@@ -1810,6 +2112,13 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         case .redimensionner(let cadres):
             appliquerCadres(cadres, transition: false)
+            return
+        case .ordre(let nouvelles):
+            // Les cases sont déjà à leur place à l'écran : on retient le nouvel ordre, et on les refait à l'identique.
+            for (cle, p) in nouvelles { places[cle] = p }
+            UserDefaults.standard.set(places, forKey: "placesCases")
+            UserDefaults.standard.removeObject(forKey: "placesApps")
+            redessinerGrille()
             return
         case .partager(let autre, let cote):
             guard case .fenetre(let a, _) = t.cible else { return }
@@ -1896,6 +2205,7 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func fermerGrille() {
+        Lanceur.commun.fermer()
         panneau?.orderOut(nil)
         retirerTouches()
     }
@@ -1985,6 +2295,24 @@ enum Programme {
     static func main() {
         let args = CommandLine.arguments
         if args.contains("--essai") { essai(); return }
+        // Pour les essais : « --image-reglages dossier » dessine chaque rubrique des réglages dans une image, sans rien afficher.
+        if let i = args.firstIndex(of: "--image-accueil"), i + 1 < args.count {
+            _ = NSApplication.shared
+            Accueil.images(vers: URL(fileURLWithPath: args[i + 1]))
+            return
+        }
+        if let i = args.firstIndex(of: "--image-reglages"), i + 1 < args.count {
+            _ = NSApplication.shared
+            for v in VoletReglages.allCases {
+                Reglages.image(v, vers: URL(fileURLWithPath: args[i + 1]).appendingPathComponent("reglages-\(v.rawValue).png"))
+            }
+            return
+        }
+        if args.contains("--reglages") {    // demande au Square déjà lancé d'ouvrir sa fenêtre de réglages
+            DistributedNotificationCenter.default().postNotificationName(.init("com.gauthieraube.square.reglages"), object: nil,
+                                                                         userInfo: nil, deliverImmediately: true)
+            return
+        }
         if args.contains("--convertir") {   // même effet que la ligne du menu, sans interface
             Agrandir.convertirTout()
             RunLoop.main.run(until: Date().addingTimeInterval(9))

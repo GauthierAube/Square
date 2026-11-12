@@ -9,6 +9,7 @@ enum Depot {
     case echanger(Tuile)          // au milieu d'une autre case : elles échangent leurs places
     case place(Int)               // sur une case vide : elle s'y installe
     case partager(Fenetre, Cote)  // sur un bord d'une autre fenêtre : les deux se partagent l'écran
+    case ordre([String: Int])     // les cases ont été réordonnées en glissant : la nouvelle place de chacune
     case redimensionner([CGWindowID: CGRect])   // la séparation entre deux fenêtres d'un groupe a été tirée
     case separer(Int?)            // une fenêtre sortie de son groupe : elle reprend tout l'écran (sur cette case vide, si précisée)
 }

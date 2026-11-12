@@ -29,8 +29,17 @@ enum Coin {
         let distance = max(abs(p.x - coin.x), abs(p.y - coin.y))
         if distance > 40 { armé = true; return }
         // Tout au fond du coin, sans bouton enfoncé (on ne gêne pas un déplacement de fenêtre).
-        guard armé, distance <= 2, NSEvent.pressedMouseButtons == 0 else { return }
+        // Pendant une capture d'écran (⌘⇧4, ⌘⇧5), Square se tient tranquille : on doit pouvoir viser un coin sans rien déclencher.
+        guard armé, distance <= 2, NSEvent.pressedMouseButtons == 0, !CaptureEcran.enCours else { return }
         armé = false
         Programme.appli.grilleParLeCoin()
+    }
+}
+
+/// La capture d'écran de macOS est-elle en cours ? (Son outil ne tourne que pendant qu'on choisit la zone à capturer.)
+enum CaptureEcran {
+    static var enCours: Bool {
+        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.apple.screencaptureui" }
+            || !NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.screencaptureui").isEmpty
     }
 }

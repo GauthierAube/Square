@@ -8,13 +8,9 @@ enum AgrandirAuto {
         set { UserDefaults.standard.set(newValue, forKey: "agrandirAuto") }
     }
 
-    /// Applications jamais agrandies toutes seules (par identifiant). Au départ : celles que le panneau du bas de Side
-    /// emprunte (Notes, Mots de passe), et Side lui-même.
-    static var exceptions: Set<String> {
-        get { Set(UserDefaults.standard.stringArray(forKey: "agrandirAutoSauf")
-                  ?? ["com.apple.Notes", "com.apple.Passwords", "com.gauthieraube.side"]) }
-        set { UserDefaults.standard.set(Array(newValue).sorted(), forKey: "agrandirAutoSauf") }
-    }
+    /// Jamais agrandi tout seul : Side lui-même. Les applications de son tiroir du bas le sont aussi, voir `tuilesDeSide` :
+    /// leur liste se règle dans Side, plus dans Square (l'ancien réglage « Ne jamais agrandir » a été retiré le 12/11/2026).
+    static let exceptions: Set<String> = ["com.gauthieraube.side"]
 
     /// Les applications rangées dans le panneau du bas de Side (la liste est tenue par Side, on la relit à chaque fois) :
     /// leurs fenêtres restent dans le panneau, on ne les agrandit jamais.

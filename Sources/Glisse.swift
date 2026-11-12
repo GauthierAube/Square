@@ -55,15 +55,23 @@ enum Glisse {
     private static var phase = 0             // 0 : pas encore décidé, 1 : le carrousel suit les doigts, -1 : ce geste n'est pas pour nous
     private static var montre = false         // le carrousel est affiché pour ce geste
     private static var debutGeste: TimeInterval = 0
-    private static let attente: TimeInterval = 0.24   // un geste parti vite mais qui dure plus que cela affiche quand même le carrousel
-    private static let vif: Float = 0.5               // au-delà de cette vitesse de départ, le geste est pris pour un effleurement
+    /// Un geste parti vite mais qui dure plus que cela affiche quand même le carrousel. Réglable (« Taille du carrousel… »).
+    static var attente: TimeInterval {
+        get { UserDefaults.standard.object(forKey: "glisseAttente") as? Double ?? 0.19 }
+        set { UserDefaults.standard.set(newValue, forKey: "glisseAttente") }
+    }
+    private static let vif: Float = 0.42              // au-delà de cette vitesse (largeurs de trackpad par seconde), c'est un effleurement
+    private static let jugement: TimeInterval = 0.045 // moment où le geste est jugé, après son départ
+    private static var juge = false
+    private static var dxDepart: Float = 0
     private static var departVif = false
+    private static var vitesseDepart: Float = 0
     private static var rapidite: Float = 0
     private static var dxPrec: Float = 0
     private static var instantPrec: TimeInterval = 0
     private static var instantPose: TimeInterval = 0
     private static var dernier: Float = 0     // dernier trajet envoyé, en nombre de fenêtres
-    private static let debut: Float = 0.02    // trajet avant de trancher entre horizontal (nous) et vertical (Side)
+    private static let debut: Float = 0.014    // trajet avant de trancher entre horizontal (nous) et vertical (Side)
     private static let parFenetre: Float = 0.11   // trajet des doigts, en largeur de trackpad, pour avancer d'une fenêtre
 
     /// Appelé par macOS à chaque instant où des doigts touchent le trackpad (hors du fil principal).
@@ -73,6 +81,11 @@ enum Glisse {
             if nombre < 3 || !actif {
                 if phase == 1 {
                     let q = dernier
+                    // Une ligne par geste dans le journal, pour régler la sensibilité sur de vrais gestes.
+                    let duree = (ProcessInfo.processInfo.systemUptime - debutGeste) * 1000
+                    journal("Square: geste à quatre doigts — %.2f largeur/s à 45 ms (%@), %.0f ms, trajet %.2f fenêtre, carrousel %@",
+                            vitesseDepart, !juge ? "trop bref pour être jugé" : (departVif ? "vif" : "posé"), duree, abs(q),
+                            montre ? "affiché" : "non affiché")
                     if montre {
                         DispatchQueue.main.async { Programme.appli.carrouselFin(CGFloat(q)) }
                     } else if abs(q) > 0.12 {
@@ -107,9 +120,8 @@ enum Glisse {
             // Vitesse de départ : le trajet déjà fait, sur le temps écoulé depuis que les doigts ont commencé à bouger.
             rapidite = abs(dx) / Float(max(maintenant - instantPose, 0.008))
             dxPrec = dx; instantPrec = maintenant
-            // Le geste est jugé une fois pour toutes, à son départ : parti vite, c'est un effleurement, et le carrousel
-            // ne se montre que si les doigts sont encore posés un bon moment après (ralentir en fin de geste ne compte pas).
-            departVif = rapidite > vif
+            dxDepart = dx
+            juge = false; departVif = false; vitesseDepart = 0
         }
         // Comme entre les bureaux : la bande suit les doigts. Doigts vers la gauche, on avance vers les fenêtres de droite.
         // Vitesse des doigts, en largeurs de trackpad par seconde (lissée).
@@ -120,6 +132,15 @@ enum Glisse {
         if !montre {
             // Un geste posé affiche le carrousel tout de suite. Seul un effleurement rapide le retient : si les doigts se
             // relèvent aussitôt, on change de fenêtre sans rien afficher ; s'ils ralentissent ou restent, il apparaît.
+            if !juge {
+                // Le geste est jugé 45 millisecondes après son départ, sur le chemin parcouru entre-temps. C'est ce qui
+                // sépare le mieux les deux gestes (mesuré sur de vrais gestes le 12/11) : un effleurement file à près d'une
+                // largeur de trackpad par seconde, un geste posé avance sept fois moins vite.
+                guard maintenant - debutGeste >= jugement else { return }
+                juge = true
+                vitesseDepart = abs(dx - dxDepart) / Float(maintenant - debutGeste)
+                departVif = vitesseDepart > vif
+            }
             guard !departVif || maintenant - debutGeste > attente else { return }
             montre = true
             DispatchQueue.main.async { Programme.appli.carrouselDebut() }
