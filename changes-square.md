@@ -6,6 +6,7 @@ Les dernières modifications sont en haut.
 
 - Quand Side sort une vidéo YouTube de son tiroir en plein écran, Square range sa fenêtre comme celle d'une application : grille, carrousel, ⌘1 à ⌘9, écran partagé. Les autres fenêtres de Side restent ignorées.
 - Fermer cette case (croix, deux doigts vers le haut) ramène la vidéo dans le tiroir au lieu de quitter Side.
+- Carrousel à quatre doigts : les cartes voisines ne sont plus transparentes.
 
 ## 12 novembre 2026 (nuit) : glisser une case entre deux autres
 

@@ -124,7 +124,7 @@ final class Carrousel {
             let taille = petit + (1 - petit) * proche
             c.carte.position = CGPoint(x: centre.x + d * pas + (d > 0 ? 1 : (d < 0 ? -1 : 0)) * min(abs(d), 1) * pousse, y: centre.y)
             c.carte.transform = CATransform3DMakeScale(taille, taille, 1)
-            c.carte.opacity = Float(0.62 + 0.38 * proche)
+            c.carte.opacity = 1          // toutes les cartes pleinement opaques (plus d'effet de transparence sur les voisines)
             c.carte.zPosition = 10 - abs(d)
             c.image.borderWidth = proche > 0.5 ? 4 : 0
         }
