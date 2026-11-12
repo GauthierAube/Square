@@ -10,6 +10,21 @@ enum Coin {
     static let noms: [(String, String)] = [("hd", String(localized: "En haut à droite")), ("hg", String(localized: "En haut à gauche")),
                                            ("bd", String(localized: "En bas à droite")), ("bg", String(localized: "En bas à gauche")),
                                            ("aucun", String(localized: "Aucun"))]
+    /// Side (s'il tourne et sait le faire) peut prendre en charge le coin de la grille, avec ses propres coins actifs :
+    /// Square ne surveille alors plus le sien, et son réglage renvoie à ceux de Side.
+    static var geréParSide: Bool {
+        let maintenant = Date()
+        if maintenant.timeIntervalSince(vérifiéÀ) > 2 {
+            vérifiéÀ = maintenant
+            let side = "com.gauthieraube.side" as CFString
+            CFPreferencesAppSynchronize(side)
+            géré = CFPreferencesCopyAppValue("coinSquare" as CFString, side) is String
+                && !NSRunningApplication.runningApplications(withBundleIdentifier: side as String).isEmpty
+        }
+        return géré
+    }
+    private static var géré = false
+    private static var vérifiéÀ = Date.distantPast
     private static var armé = true          // il faut ressortir du coin avant de pouvoir le déclencher de nouveau
     private static var ecoute: Any?
     private static var ecouteLocale: Any?
@@ -22,7 +37,7 @@ enum Coin {
     }
 
     private static func examiner() {
-        guard choix != "aucun" else { return }
+        guard choix != "aucun", !geréParSide else { return }
         let p = NSEvent.mouseLocation
         guard let e = NSScreen.screens.first(where: { $0.frame.insetBy(dx: -1, dy: -1).contains(p) }) else { return }
         let f = e.frame

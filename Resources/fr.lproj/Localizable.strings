@@ -196,8 +196,12 @@ Il faut au moins une touche ⌃ ⌥ ⇧ ou ⌘ (ou une touche F1 à F20).
 	<string>Réglages de Square</string>
 	<key>Réglages…</key>
 	<string>Réglages…</string>
+	<key>Régler dans Side…</key>
+	<string>Régler dans Side…</string>
 	<key>Sens</key>
 	<string>Sens</string>
+	<key>Side est ouvert : c'est lui qui gère les coins actifs, pour que la grille, le Finder, le tiroir et le presse-papiers ne se disputent pas les coins. Choisis le coin de la grille dans Side › Coins actifs.</key>
+	<string>Side est ouvert : c'est lui qui gère les coins actifs, pour que la grille, le Finder, le tiroir et le presse-papiers ne se disputent pas les coins. Choisis le coin de la grille dans Side › Coins actifs.</string>
 	<key>Square redémarre pour changer de langue.</key>
 	<string>Square redémarre pour changer de langue.</string>
 	<key>Suivant</key>

@@ -196,8 +196,12 @@ Press Esc to cancel.</string>
 	<string>Square Settings</string>
 	<key>Réglages…</key>
 	<string>Settings…</string>
+	<key>Régler dans Side…</key>
+	<string>Set in Side…</string>
 	<key>Sens</key>
 	<string>Direction</string>
+	<key>Side est ouvert : c'est lui qui gère les coins actifs, pour que la grille, le Finder, le tiroir et le presse-papiers ne se disputent pas les coins. Choisis le coin de la grille dans Side › Coins actifs.</key>
+	<string>Side is open, so it manages the hot corners: this way the grid, the Finder, the drawer and the clipboard never compete for a corner. Choose the grid's corner in Side › Hot Corners.</string>
 	<key>Square redémarre pour changer de langue.</key>
 	<string>Square restarts to change the language.</string>
 	<key>Suivant</key>

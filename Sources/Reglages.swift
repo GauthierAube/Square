@@ -161,11 +161,24 @@ struct ReglagesVue: View {
                 note("La touche choisie avec un chiffre de 1 à 9 mène droit à la fenêtre de ce numéro, dans l'ordre des cases de la grille (le numéro s'affiche au survol d'une case). Attention : ces raccourcis sont alors pris à toutes les applications. ⌘ + chiffre sert par exemple à changer d'onglet dans Safari ou de présentation dans le Finder ; ⌃ + chiffre n'est presque jamais utilisé.")
             }
             Section {
-                Picker("Coin actif", selection: $m.coin) {
-                    ForEach(Coin.noms, id: \.0) { code, nom in Text(nom).tag(code) }
+                if Coin.geréParSide {
+                    LabeledContent("Coin actif") {
+                        Button("Régler dans Side…") {
+                            DistributedNotificationCenter.default().postNotificationName(.init("com.gauthieraube.side.commande"), object: "reglages-coins",
+                                                                                         userInfo: nil, deliverImmediately: true)
+                        }
+                    }
+                } else {
+                    Picker("Coin actif", selection: $m.coin) {
+                        ForEach(Coin.noms, id: \.0) { code, nom in Text(nom).tag(code) }
+                    }
                 }
             } header: { Text("Coin de l'écran") } footer: {
-                note("Pousser la souris tout au fond de ce coin affiche la grille ; y revenir la referme. Si macOS utilise déjà ce coin, désactive-le dans Réglages Système > Bureau et Dock > Coins actifs.")
+                if Coin.geréParSide {
+                    note("Side est ouvert : c'est lui qui gère les coins actifs, pour que la grille, le Finder, le tiroir et le presse-papiers ne se disputent pas les coins. Choisis le coin de la grille dans Side › Coins actifs.")
+                } else {
+                    note("Pousser la souris tout au fond de ce coin affiche la grille ; y revenir la referme. Si macOS utilise déjà ce coin, désactive-le dans Réglages Système > Bureau et Dock > Coins actifs.")
+                }
             }
             Section {
                 LabeledContent("Cases vides") {
