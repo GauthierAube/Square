@@ -19,6 +19,10 @@ swiftc -O -swift-version 5 -parse-as-library -target arm64-apple-macos14.0 \
 if [ ${#EXTRAIRE[@]} -gt 0 ]; then
   xcrun xcstringstool sync Localizable.xcstrings --stringsdata build/textes/*.stringsdata
   xcrun xcstringstool compile Localizable.xcstrings -o Resources
+  mkdir -p Resources/fr.lproj
+  # Le français est la langue des textes du code, mais l'outil d'Apple ne produit que les traductions. Sans fichier
+  # français, macOS se rabattrait sur l'anglais (langue de développement) : on écrit donc la table française, à l'identique.
+  /usr/bin/python3 -c 'import json,plistlib,sys; c=json.load(open("Localizable.xcstrings")); plistlib.dump({k: k for k in c["strings"]}, open(sys.argv[1], "wb"))' Resources/fr.lproj/Localizable.strings
   if [ -f InfoPlist.xcstrings ]; then xcrun xcstringstool compile InfoPlist.xcstrings -o Resources; fi
 fi
 mkdir -p Resources/en.lproj Resources/fr.lproj
