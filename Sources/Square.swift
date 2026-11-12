@@ -114,6 +114,8 @@ enum Relevé {
         // Side n'a pas de fenêtre à ranger, sauf une : la vidéo qu'il sort de son tiroir en plein écran. Il en donne le numéro.
         let videoSide = Relevé.videoDeSide(parId)
         if let v = videoSide { apps[v.pid] = v.app }
+        // Les fenêtres rangées dans le tiroir de Side ne sont pas à Square : ni grille, ni carrousel.
+        let tiroir = Relevé.fenetresDuTiroir()
 
         var espaces: [Espace] = []
         var courants: [String: UInt64] = [:]
@@ -138,6 +140,7 @@ enum Relevé {
                           (i[kCGWindowLayer as String] as? Int) == 0,
                           let pid = i[kCGWindowOwnerPID as String] as? pid_t, pid != moi, let app = apps[pid],
                           app.activationPolicy == .regular || w == videoSide?.wid,
+                          !tiroir.contains(w),
                           !masquee || app.isHidden,                 // une fenêtre réduite dans le Dock ne compte pas
                           let d = i[kCGWindowBounds as String] as? NSDictionary,
                           let cadre = CGRect(dictionaryRepresentation: d),
@@ -183,6 +186,13 @@ enum Relevé {
     /// Side dit-il avoir une vidéo en grand ? (Sans vérifier la fenêtre : pour les tests rapides.)
     static var videoDeSideAnnoncee: Bool {
         ((CFPreferencesCopyAppValue("videoPleinEcran" as CFString, side as CFString) as? Int) ?? 0) > 0
+    }
+    /// Les numéros des fenêtres rangées dans le tiroir de Side (réglage `fenetresDuTiroir`, tenu par Side), si Side tourne.
+    static func fenetresDuTiroir() -> Set<CGWindowID> {
+        guard !NSRunningApplication.runningApplications(withBundleIdentifier: side).isEmpty else { return [] }
+        CFPreferencesAppSynchronize(side as CFString)
+        let ids = (CFPreferencesCopyAppValue("fenetresDuTiroir" as CFString, side as CFString) as? [Int]) ?? []
+        return Set(ids.map { CGWindowID($0) })
     }
     /// Ferme une fenêtre par son bouton rouge, sans quitter l'application.
     static func fermerFenetre(pid: pid_t, wid: CGWindowID) {
