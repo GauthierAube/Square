@@ -41,11 +41,11 @@ enum VoletReglages: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var titre: String {
         switch self {
-        case .grille: return "Grille"
-        case .dock: return "Dock"
-        case .gestes: return "Gestes"
-        case .fenetres: return "Fenêtres"
-        case .general: return "Général"
+        case .grille: return String(localized: "Grille")
+        case .dock: return String(localized: "Dock")
+        case .gestes: return String(localized: "Gestes")
+        case .fenetres: return String(localized: "Fenêtres")
+        case .general: return String(localized: "Général")
         }
     }
     var symbole: String {
@@ -127,7 +127,7 @@ struct ReglagesVue: View {
         .accessibilityAddTraits(choisi ? [.isButton, .isSelected] : .isButton)
     }
 
-    private func curseur(_ titre: String, _ valeur: Binding<Double>, _ plage: ClosedRange<Double>, _ texte: String,
+    private func curseur(_ titre: LocalizedStringKey,_ valeur: Binding<Double>, _ plage: ClosedRange<Double>, _ texte: String,
                          pendant: ((Bool) -> Void)? = nil) -> some View {
         LabeledContent(titre) {
             HStack {
@@ -137,7 +137,7 @@ struct ReglagesVue: View {
         }
     }
 
-    private func note(_ texte: String) -> some View {
+    private func note(_ texte: LocalizedStringKey) -> some View {
         Text(texte).font(.caption).foregroundStyle(.secondary)
     }
 
@@ -195,7 +195,7 @@ struct ReglagesVue: View {
             Section {
                 curseur("Taille des icônes", $m.dockTaille, 30...72, "\(Int(m.dockTaille.rounded())) pt")
                 curseur("Grossissement au survol", $m.dockLoupe, 1...2,
-                        m.dockLoupe < 1.005 ? "Aucun" : "+ \(Int(((m.dockLoupe - 1) * 100).rounded())) %")
+                        m.dockLoupe < 1.005 ? String(localized: "Aucun") : String(localized: "+ \(Int(((m.dockLoupe - 1) * 100).rounded())) %"))
             } header: { Text("Icônes") }
             .disabled(!m.dockAffiche)
             Section {
@@ -235,7 +235,7 @@ struct ReglagesVue: View {
             }
             Section {
                 LabeledContent("Applications du tiroir de Side") {
-                    Text(AgrandirAuto.tuilesDeSide.isEmpty ? "Aucune" : "\(AgrandirAuto.tuilesDeSide.count)").foregroundStyle(.secondary)
+                    Text(AgrandirAuto.tuilesDeSide.isEmpty ? String(localized: "Aucune") : "\(AgrandirAuto.tuilesDeSide.count)").foregroundStyle(.secondary)
                 }
             } header: { Text("Jamais agrandies") } footer: {
                 note("Les applications rangées dans le tiroir du bas de Side gardent leur place dans le tiroir : Square ne les agrandit pas. Leur liste se règle dans Side (Réglages > Tiroir du bas).")
@@ -253,6 +253,13 @@ struct ReglagesVue: View {
                 note("À utiliser seulement s'il reste des fenêtres dans un plein écran d'Apple : elles en sortent et remplissent l'écran à la place.")
             }
         case .general:
+            Section {
+                Picker("Langue", selection: Binding(get: { Langue.choisie }, set: { Langue.choisir($0) })) {
+                    ForEach(Langue.allCases) { Text($0.nom).tag($0) }
+                }
+            } header: { Text("Langue") } footer: {
+                note("Square redémarre pour changer de langue.")
+            }
             Section("Démarrage") {
                 Toggle("Lancer Square à l'ouverture du Mac", isOn: $m.auDemarrage)
             }
@@ -273,7 +280,7 @@ enum Reglages {
     static func ouvrir() {
         if fenetre == nil {
             let w = NSWindow(contentViewController: NSHostingController(rootView: ReglagesVue(m: modele)))
-            w.title = "Réglages de Square"
+            w.title = String(localized: "Réglages de Square")
             // Comme les Réglages Système : barre de titre fondue dans le contenu, barre latérale à gauche.
             w.styleMask = [.titled, .closable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true

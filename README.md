@@ -47,7 +47,7 @@ Square fonctionne seul, et s'entend avec deux autres petites apps :
 ## Limites connues
 
 - Projet personnel, écrit rapidement avec l'aide d'une IA : il reste sûrement des bugs.
-- L'interface est en français uniquement.
+- L'interface existe en français et en anglais : elle suit la langue du Mac (anglais si le Mac n'est pas en français), et se choisit dans les réglages.
 - Pensé pour un seul bureau. Avec plusieurs bureaux, le geste à quatre doigts est laissé à macOS.
 - Certaines apps refusent de descendre sous une largeur minimale : en écran partagé, leurs fenêtres peuvent se chevaucher.
 - Les fenêtres encore dans un plein écran d'Apple apparaissent dans la grille, mais ne peuvent pas être partagées. Un bouton des réglages les en sort.

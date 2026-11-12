@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>+ %lld %%</key>
+	<string>+%lld%%</string>
+	<key>Affichage</key>
+	<string>Display</string>
+	<key>Afficher la corbeille au bout du Dock</key>
+	<string>Show the Trash at the end of the Dock</string>
+	<key>Afficher la grille  (%@)</key>
+	<string>Show Grid  (%@)</string>
+	<key>Afficher le Dock dans la grille</key>
+	<string>Show the Dock in the grid</string>
+	<key>Agrandir chaque nouvelle fenêtre</key>
+	<string>Make each new window fill the screen</string>
+	<key>Agrandir la fenêtre en cours  (⌃⌥ Entrée)</key>
+	<string>Fill the Screen with Current Window  (⌃⌥ Return)</string>
+	<key>Ajouter au Dock</key>
+	<string>Add to Dock</string>
+	<key>Aller à la fenêtre 1, 2, 3…</key>
+	<string>Go to window 1, 2, 3…</string>
+	<key>Apparition après un geste vif</key>
+	<string>Delay after a quick swipe</string>
+	<key>Applications</key>
+	<string>Applications</string>
+	<key>Applications du tiroir de Side</key>
+	<string>Apps in Side's drawer</string>
+	<key>Appuyez sur le nouveau raccourci.
+Il faut au moins une touche ⌃ ⌥ ⇧ ou ⌘ (ou une touche F1 à F20).
+Échap pour annuler.</key>
+	<string>Press the new shortcut.
+It needs at least one of ⌃ ⌥ ⇧ or ⌘ (or a key from F1 to F20).
+Press Esc to cancel.</string>
+	<key>Après un geste vif, le carrousel apparaît…</key>
+	<string>After a quick swipe, the carousel appears…</string>
+	<key>Aucun</key>
+	<string>None</string>
+	<key>Aucune</key>
+	<string>None</string>
+	<key>Automatique (langue du Mac)</key>
+	<string>Automatic (Mac language)</string>
+	<key>Autoriser « Accessibilité »…</key>
+	<string>Allow “Accessibility”…</string>
+	<key>Autoriser « Enregistrement de l'écran »…</key>
+	<string>Allow “Screen Recording”…</string>
+	<key>Bienvenue dans Square</key>
+	<string>Welcome to Square</string>
+	<key>Bord</key>
+	<string>Edge</string>
+	<key>Bouton vert</key>
+	<string>Green Button</string>
+	<key>Carrousel</key>
+	<string>Carousel</string>
+	<key>Carrousel à quatre doigts</key>
+	<string>Four-Finger Carousel</string>
+	<key>Cases vides</key>
+	<string>Empty tiles</string>
+	<key>Changer…</key>
+	<string>Change…</string>
+	<key>Chaque nouvelle fenêtre de travail remplit l'écran toute seule, sans passer en plein écran d'Apple.</key>
+	<string>Each new document window fills the screen on its own, without going into macOS full screen.</string>
+	<key>Choisir</key>
+	<string>Choose</string>
+	<key>Clavier</key>
+	<string>Keyboard</string>
+	<key>Coin actif</key>
+	<string>Hot corner</string>
+	<key>Coin de l'écran</key>
+	<string>Screen Corner</string>
+	<key>Dans la grille : glisser une case sur le milieu d'une autre change l'ordre ; la glisser sur un bord partage l'écran entre les deux fenêtres ; deux doigts vers le haut sur une case ferment l'application.</key>
+	<string>In the grid: drag a tile onto the middle of another to change the order; drag it onto an edge to split the screen between the two windows; swipe up with two fingers on a tile to quit the app.</string>
+	<key>Dock</key>
+	<string>Dock</string>
+	<key>Démarrage</key>
+	<string>Startup</string>
+	<key>Dépannage</key>
+	<string>Troubleshooting</string>
+	<key>Désactivé</key>
+	<string>Off</string>
+	<key>En bas</key>
+	<string>Bottom</string>
+	<key>En bas à droite</key>
+	<string>Bottom right</string>
+	<key>En bas à gauche</key>
+	<string>Bottom left</string>
+	<key>En haut</key>
+	<string>Top</string>
+	<key>En haut à droite</key>
+	<string>Top right</string>
+	<key>En haut à gauche</key>
+	<string>Top left</string>
+	<key>Entrée</key>
+	<string>Return</string>
+	<key>Espace</key>
+	<string>Space</string>
+	<key>Fenêtres</key>
+	<string>Windows</string>
+	<key>Fenêtres en plein écran d'Apple</key>
+	<string>Windows in macOS full screen</string>
+	<key>Fermer</key>
+	<string>Close</string>
+	<key>Gestes</key>
+	<string>Gestures</string>
+	<key>Grand</key>
+	<string>Large</string>
+	<key>Grille</key>
+	<string>Grid</string>
+	<key>Grossissement au survol</key>
+	<string>Magnification on hover</string>
+	<key>Général</key>
+	<string>General</string>
+	<key>Icônes</key>
+	<string>Icons</string>
+	<key>Inversé</key>
+	<string>Reversed</string>
+	<key>Jamais agrandies</key>
+	<string>Never fill the screen</string>
+	<key>La grille</key>
+	<string>The Grid</string>
+	<key>La liste des applications s'ouvre toujours du côté intérieur de l'écran, avec sa pointe dirigée vers le Dock.</key>
+	<string>The app list always opens toward the inside of the screen, with its arrow pointing at the Dock.</string>
+	<key>La touche choisie avec un chiffre de 1 à 9 mène droit à la fenêtre de ce numéro, dans l'ordre des cases de la grille (le numéro s'affiche au survol d'une case). Attention : ces raccourcis sont alors pris à toutes les applications. ⌘ + chiffre sert par exemple à changer d'onglet dans Safari ou de présentation dans le Finder ; ⌃ + chiffre n'est presque jamais utilisé.</key>
+	<string>The chosen key with a number from 1 to 9 goes straight to the window with that number, in the order of the grid's tiles (the number appears when you hover over a tile). Note: these shortcuts are then taken from all other apps. For example, ⌘ + number switches tabs in Safari or views in the Finder; ⌃ + number is almost never used.</string>
+	<key>Lancer Square à l'ouverture du Mac</key>
+	<string>Open Square at login</string>
+	<key>Langue</key>
+	<string>Language</string>
+	<key>Le Dock</key>
+	<string>The Dock</string>
+	<key>Le bouton vert</key>
+	<string>The Green Button</string>
+	<key>Le bouton vert remplit l'écran</key>
+	<string>The green button fills the screen</string>
+	<key>Les applications rangées dans le tiroir du bas de Side gardent leur place dans le tiroir : Square ne les agrandit pas. Leur liste se règle dans Side (Réglages &gt; Tiroir du bas).</key>
+	<string>Apps kept in Side's bottom drawer stay in the drawer: Square doesn't make them fill the screen. Set the list in Side (Settings &gt; Bottom Drawer).</string>
+	<key>Les cartes suivent les doigts</key>
+	<string>Cards follow fingers</string>
+	<key>Les en sortir</key>
+	<string>Take Them Out</string>
+	<key>Les gestes de Square, en images</key>
+	<string>Square's gestures, illustrated</string>
+	<key>Milieu</key>
+	<string>Middle</string>
+	<key>Molette</key>
+	<string>Scroll wheel</string>
+	<key>Même bureau</key>
+	<string>Same desktop</string>
+	<key>Nouvelles fenêtres</key>
+	<string>New Windows</string>
+	<key>Organisation</key>
+	<string>Organization</string>
+	<key>Passer</key>
+	<string>Skip</string>
+	<key>Passer d'une application à l'autre</key>
+	<string>Switch between apps</string>
+	<key>Pendant que tu règles la taille, le vrai carrousel s'affiche au milieu de l'écran. Apparition : plus court, le carrousel vient plus tôt mais un simple effleurement risque de l'afficher ; plus long, c'est l'inverse.</key>
+	<string>While you adjust the size, the real carousel appears in the middle of the screen. Delay: shorter, the carousel appears sooner but a simple flick may show it; longer, the opposite.</string>
+	<key>Petit</key>
+	<string>Small</string>
+	<key>Position</key>
+	<string>Position</string>
+	<key>Pousser la souris tout au fond de ce coin affiche la grille ; y revenir la referme. Si macOS utilise déjà ce coin, désactive-le dans Réglages Système &gt; Bureau et Dock &gt; Coins actifs.</key>
+	<string>Pushing the pointer all the way into this corner shows the grid; going back there closes it. If macOS already uses this corner, turn it off in System Settings &gt; Desktop &amp; Dock &gt; Hot Corners.</string>
+	<key>Précédent</key>
+	<string>Back</string>
+	<key>Présentation</key>
+	<string>Introduction</string>
+	<key>Quatre doigts</key>
+	<string>Four Fingers</string>
+	<key>Quatre doigts vers la gauche ou la droite</key>
+	<string>Four fingers left or right</string>
+	<key>Quitter %@</key>
+	<string>Quit %@</string>
+	<key>Quitter Square</key>
+	<string>Quit Square</string>
+	<key>Raccourci</key>
+	<string>Shortcut</string>
+	<key>Raccourci de Square</key>
+	<string>Square Shortcut</string>
+	<key>Ranger</key>
+	<string>Arrange</string>
+	<key>Rechercher une app</key>
+	<string>Search for an app</string>
+	<key>Recopier le Dock de macOS</key>
+	<string>Copy the macOS Dock</string>
+	<key>Repartir du Dock de macOS</key>
+	<string>Start over from the macOS Dock</string>
+	<key>Resserrer la grille</key>
+	<string>Tighten Grid</string>
+	<key>Retirer du Dock</key>
+	<string>Remove from Dock</string>
+	<key>Revoir la présentation</key>
+	<string>Show Introduction Again</string>
+	<key>Réglages de Square</key>
+	<string>Square Settings</string>
+	<key>Réglages…</key>
+	<string>Settings…</string>
+	<key>Sens</key>
+	<string>Direction</string>
+	<key>Square redémarre pour changer de langue.</key>
+	<string>Square restarts to change the language.</string>
+	<key>Suivant</key>
+	<string>Next</string>
+	<key>Taille des cartes</key>
+	<string>Card size</string>
+	<key>Taille des icônes</key>
+	<string>Icon size</string>
+	<key>Tard</key>
+	<string>Late</string>
+	<key>Terminer</key>
+	<string>Done</string>
+	<key>Un clic remplit l'écran en restant sur le même bureau ; un second rend à la fenêtre sa taille. Maj + clic ou Option + clic gardent le plein écran d'Apple.</key>
+	<string>One click fills the screen while staying on the same desktop; a second click restores the window's size. Shift-click or Option-click keeps macOS full screen.</string>
+	<key>Un effleurement rapide change d'application sans rien afficher. Un geste posé fait apparaître le carrousel, et l'application du centre passe devant quand les doigts se lèvent. Le geste ne s'active que s'il n'y a qu'un seul bureau ; sinon macOS glisse d'un bureau à l'autre.</key>
+	<string>A quick flick switches apps without showing anything. A slower swipe brings up the carousel, and the app in the center comes to the front when you lift your fingers. The gesture only works when there is a single desktop; otherwise macOS swipes between desktops.</string>
+	<key>Vers « Vite » : il apparaît plus tôt, mais un simple effleurement risque de l'afficher. Vers « Tard » : l'inverse.</key>
+	<string>Toward “Soon”: it appears earlier, but a simple flick may show it. Toward “Late”: the opposite.</string>
+	<key>Vite</key>
+	<string>Soon</string>
+	<key>l'application</key>
+	<string>the app</string>
+	<key>À droite</key>
+	<string>Right</string>
+	<key>À gauche</key>
+	<string>Left</string>
+	<key>À sa première utilisation, ce Dock est une copie de celui de macOS ; ensuite il vit sa vie. Son premier bouton ouvre la liste de toutes les applications : Entrée ajoute au Dock l'application choisie, Suppr l'en retire. Un clic droit sur une icône permet de la retirer du Dock ou de quitter l'application.</key>
+	<string>The first time you use it, this Dock is a copy of the macOS Dock; after that it has a life of its own. Its first button opens the list of all apps: Return adds the selected app to the Dock, Delete removes it. Right-click an icon to remove it from the Dock or quit the app.</string>
+	<key>À utiliser seulement s'il reste des fenêtres dans un plein écran d'Apple : elles en sortent et remplissent l'écran à la place.</key>
+	<string>Use only if some windows are still in macOS full screen: they leave it and fill the screen instead.</string>
+	<key>⌃ + chiffre</key>
+	<string>⌃ + number</string>
+	<key>⌘ + chiffre</key>
+	<string>⌘ + number</string>
+	<key>⌥ + chiffre</key>
+	<string>⌥ + number</string>
+</dict>
+</plist>

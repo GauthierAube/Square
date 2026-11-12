@@ -398,13 +398,13 @@ final class DockGrille: NSView {
         let chemin = chemins[i - 2]
         // Une application ouverte peut être quittée d'ici.
         if let app = NSWorkspace.shared.runningApplications.first(where: { $0.bundleURL?.path == chemin }) {
-            let nom = app.localizedName ?? "l'application"
-            let quitter = menu.addItem(withTitle: "Quitter \(nom)", action: #selector(quitter(_:)), keyEquivalent: "")
+            let nom = app.localizedName ?? String(localized: "l'application")
+            let quitter = menu.addItem(withTitle: String(localized: "Quitter \(nom)"), action: #selector(quitter(_:)), keyEquivalent: "")
             quitter.target = self
             quitter.representedObject = chemin
             menu.addItem(.separator())
         }
-        let item = menu.addItem(withTitle: "Retirer du Dock", action: #selector(retirer(_:)), keyEquivalent: "")
+        let item = menu.addItem(withTitle: String(localized: "Retirer du Dock"), action: #selector(retirer(_:)), keyEquivalent: "")
         item.target = self
         item.representedObject = chemin
         NSMenu.popUpContextMenu(menu, with: event, for: self)
@@ -459,7 +459,7 @@ private final class LigneAppli: NSView {
         epingle.image = NSImage(systemSymbolName: dansLeDock ? "checkmark.circle.fill" : "plus.circle", accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: 17, weight: .regular))
         epingle.contentTintColor = dansLeDock ? orange : NSColor(white: 1, alpha: 0.75)
-        epingle.toolTip = dansLeDock ? "Retirer du Dock" : "Ajouter au Dock"
+        epingle.toolTip = dansLeDock ? String(localized: "Retirer du Dock") : String(localized: "Ajouter au Dock")
         epingle.frame = NSRect(x: 300, y: 5, width: 28, height: 28)
         epingle.target = self
         epingle.action = #selector(clicEpingle)
@@ -513,7 +513,7 @@ final class Lanceur: NSObject, NSTextFieldDelegate {
         let contenu = NSView(frame: NSRect(x: pointe, y: pointe, width: largeur, height: hauteur))
         fond.addSubview(contenu)
         champ.frame = NSRect(x: 14, y: hauteur - 42, width: largeur - 28, height: 28)
-        champ.placeholderString = "Rechercher une app"
+        champ.placeholderString = String(localized: "Rechercher une app")
         champ.font = .systemFont(ofSize: 15)
         champ.isBordered = false
         champ.drawsBackground = false

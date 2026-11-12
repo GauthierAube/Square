@@ -343,7 +343,7 @@ struct AccueilVue: View {
                     Button("Réglages…") { fermer(); Reglages.ouvrir() }
                 }
                 if etape > 0 { Button("Précédent") { etape -= 1 } }
-                Button(etape < Self.nombre - 1 ? "Suivant" : "Terminer") {
+                Button(etape < Self.nombre - 1 ? String(localized: "Suivant") : String(localized: "Terminer")) {
                     if etape < Self.nombre - 1 { etape += 1 } else { fermer() }
                 }
                 .buttonStyle(.borderedProminent)
@@ -356,7 +356,8 @@ struct AccueilVue: View {
     }
 
     private var titre: String {
-        ["La grille", "Choisir", "Quatre doigts", "Ranger", "Le Dock", "Le bouton vert"][min(etape, 5)]
+        [String(localized: "La grille"), String(localized: "Choisir"), String(localized: "Quatre doigts"),
+         String(localized: "Ranger"), String(localized: "Le Dock"), String(localized: "Le bouton vert")][min(etape, 5)]
     }
 
     private static let symbolesCoin = ["hd": "arrow.up.right", "hg": "arrow.up.left", "bd": "arrow.down.right", "bg": "arrow.down.left"]
@@ -364,25 +365,25 @@ struct AccueilVue: View {
     @ViewBuilder private var pastilles: some View {
         switch etape {
         case 0:
-            if let s = Self.symbolesCoin[Coin.choix] { PastilleAccueil(symbole: s, texte: "Coin de l'écran") }
+            if let s = Self.symbolesCoin[Coin.choix] { PastilleAccueil(symbole: s, texte: String(localized: "Coin de l'écran")) }
             PastilleAccueil(symbole: "keyboard", texte: Raccourci.actuel.nom)
         case 1:
             PastilleAccueil(symbole: "cursorarrow.click", texte: nil)
-            PastilleAccueil(symbole: "computermouse", texte: "Molette")
+            PastilleAccueil(symbole: "computermouse", texte: String(localized: "Molette"))
             if Appli.toucheDirecte != "aucun" {
                 PastilleAccueil(symbole: nil, texte: (["cmd": "⌘", "opt": "⌥", "ctrl": "⌃"][Appli.toucheDirecte] ?? "") + " 1 … 9")
             }
         case 2:
             PastilleAccueil(symbole: "hand.draw", texte: "←  →")
         case 3:
-            PastilleAccueil(symbole: "arrow.left.arrow.right", texte: "Milieu")
-            PastilleAccueil(symbole: "rectangle.split.2x1", texte: "Bord")
-            PastilleAccueil(symbole: "arrow.up", texte: "Fermer")
+            PastilleAccueil(symbole: "arrow.left.arrow.right", texte: String(localized: "Milieu"))
+            PastilleAccueil(symbole: "rectangle.split.2x1", texte: String(localized: "Bord"))
+            PastilleAccueil(symbole: "arrow.up", texte: String(localized: "Fermer"))
         case 4:
             PastilleAccueil(symbole: "plus.app", texte: nil)
             PastilleAccueil(symbole: "cursorarrow.click", texte: nil)
         default:
-            PastilleAccueil(symbole: "macwindow", texte: "Même bureau")
+            PastilleAccueil(symbole: "macwindow", texte: String(localized: "Même bureau"))
         }
     }
 }
@@ -399,7 +400,7 @@ enum Accueil {
     static func montrer() {
         if fenetre == nil {
             let w = NSWindow(contentViewController: NSHostingController(rootView: AccueilVue(fermer: { Accueil.fermer() })))
-            w.title = "Bienvenue dans Square"
+            w.title = String(localized: "Bienvenue dans Square")
             w.styleMask = [.titled, .closable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
             w.titleVisibility = .hidden

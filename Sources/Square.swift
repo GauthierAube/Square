@@ -567,7 +567,7 @@ struct Raccourci {
     static func depuis(_ e: NSEvent) -> Raccourci? {
         let m = e.modifierFlags.intersection([.command, .option, .control, .shift])
         let speciales: [Int: String] = [
-            kVK_Tab: "Tab", kVK_Space: "Espace", kVK_Return: "Entrée", kVK_F1: "F1", kVK_F2: "F2", kVK_F3: "F3",
+            kVK_Tab: "Tab", kVK_Space: String(localized: "Espace"), kVK_Return: String(localized: "Entrée"), kVK_F1: "F1", kVK_F2: "F2", kVK_F3: "F3",
             kVK_F4: "F4", kVK_F5: "F5", kVK_F6: "F6", kVK_F7: "F7", kVK_F8: "F8", kVK_F9: "F9", kVK_F10: "F10",
             kVK_F11: "F11", kVK_F12: "F12", kVK_F13: "F13", kVK_F14: "F14", kVK_F15: "F15", kVK_F16: "F16",
             kVK_F17: "F17", kVK_F18: "F18", kVK_F19: "F19", kVK_F20: "F20",
@@ -668,7 +668,7 @@ final class Case: NSView {
                 .applying(NSImage.SymbolConfiguration(paletteColors: [.white, NSColor(white: 0.1, alpha: 0.85)])))
         // Croix blanche sur rond sombre : visible aussi sur une fenêtre claire (celle du Finder, par exemple).
         fermer.shadow = { let o = NSShadow(); o.shadowColor = NSColor(white: 0, alpha: 0.4); o.shadowBlurRadius = 4; return o }()
-        fermer.toolTip = "Quitter \(tuile.titre)"
+        fermer.toolTip = String(localized: "Quitter \(tuile.titre)")
         fermer.target = self
         fermer.action = #selector(clicFermer)
         fermer.isHidden = true
@@ -1090,7 +1090,7 @@ final class Grille: NSView {
         guard let c = cases.first(where: { $0.frame.contains(p) }) else { return }
         clicDroitSur = c.tuile
         let menu = NSMenu()
-        let item = menu.addItem(withTitle: "Quitter \(c.tuile.titre.components(separatedBy: " — ").first ?? "l'application")",
+        let item = menu.addItem(withTitle: String(localized: "Quitter \(c.tuile.titre.components(separatedBy: " — ").first ?? String(localized: "l'application"))"),
                                 action: #selector(quitterLaCase), keyEquivalent: "")
         item.target = self
         NSMenu.popUpContextMenu(menu, with: event, for: self)
@@ -1544,18 +1544,18 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return i
         }
         // Le menu ne garde que les actions ; tous les réglages sont dans la fenêtre « Réglages… ».
-        _ = ajouter("Afficher la grille  (\(Raccourci.actuel.nom))", #selector(basculerGrille))
-        _ = ajouter("Agrandir la fenêtre en cours  (⌃⌥ Entrée)", #selector(agrandirActive))
+        _ = ajouter(String(localized: "Afficher la grille  (\(Raccourci.actuel.nom))"), #selector(basculerGrille))
+        _ = ajouter(String(localized: "Agrandir la fenêtre en cours  (⌃⌥ Entrée)"), #selector(agrandirActive))
         menu.addItem(.separator())
-        let reglages = ajouter("Réglages…", #selector(ouvrirReglages))
+        let reglages = ajouter(String(localized: "Réglages…"), #selector(ouvrirReglages))
         reglages.keyEquivalent = ","
         if !AXIsProcessTrusted() || !Images.autorisé {
             menu.addItem(.separator())
-            if !AXIsProcessTrusted() { _ = ajouter("Autoriser « Accessibilité »…", #selector(ouvrirAccessibilité)) }
-            if !Images.autorisé { _ = ajouter("Autoriser « Enregistrement de l'écran »…", #selector(ouvrirCapture)) }
+            if !AXIsProcessTrusted() { _ = ajouter(String(localized: "Autoriser « Accessibilité »…"), #selector(ouvrirAccessibilité)) }
+            if !Images.autorisé { _ = ajouter(String(localized: "Autoriser « Enregistrement de l'écran »…"), #selector(ouvrirCapture)) }
         }
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quitter Square", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: String(localized: "Quitter Square"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
     }
 
     @objc private func agrandirActive() {
@@ -1687,31 +1687,31 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let ecran = ecranSousLaSouris() else { return }
         let w = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 420, height: 176), styleMask: [.titled, .closable],
                         backing: .buffered, defer: false)
-        w.title = "Carrousel à quatre doigts"
+        w.title = String(localized: "Carrousel à quatre doigts")
         w.isReleasedWhenClosed = false
         w.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)     // au-dessus de l'aperçu
         w.hidesOnDeactivate = false
-        let petit = NSTextField(labelWithString: "Petit"), grand = NSTextField(labelWithString: "Grand")
+        let petit = NSTextField(labelWithString: String(localized: "Petit")), grand = NSTextField(labelWithString: String(localized: "Grand"))
         petit.frame = NSRect(x: 20, y: 122, width: 44, height: 18)
         grand.frame = NSRect(x: 362, y: 122, width: 44, height: 18)
         let curseur = NSSlider(value: Double(Carrousel.taille), minValue: Double(Carrousel.tailles.lowerBound),
                                maxValue: Double(Carrousel.tailles.upperBound), target: self, action: #selector(tailleCarrouselChangée(_:)))
         curseur.isContinuous = true
         curseur.frame = NSRect(x: 66, y: 118, width: 290, height: 26)
-        let titreTaille = NSTextField(labelWithString: "Taille des cartes")
+        let titreTaille = NSTextField(labelWithString: String(localized: "Taille des cartes"))
         titreTaille.font = .systemFont(ofSize: 12, weight: .semibold)
         titreTaille.frame = NSRect(x: 20, y: 146, width: 380, height: 18)
         // Le délai avant d'afficher le carrousel quand le geste part vite.
-        let titreDelai = NSTextField(labelWithString: "Après un geste vif, le carrousel apparaît…")
+        let titreDelai = NSTextField(labelWithString: String(localized: "Après un geste vif, le carrousel apparaît…"))
         titreDelai.font = .systemFont(ofSize: 12, weight: .semibold)
         titreDelai.frame = NSRect(x: 20, y: 80, width: 380, height: 18)
-        let tot = NSTextField(labelWithString: "Vite"), tard = NSTextField(labelWithString: "Tard")
+        let tot = NSTextField(labelWithString: String(localized: "Vite")), tard = NSTextField(labelWithString: String(localized: "Tard"))
         tot.frame = NSRect(x: 20, y: 56, width: 44, height: 18)
         tard.frame = NSRect(x: 362, y: 56, width: 44, height: 18)
         let delai = NSSlider(value: Glisse.attente, minValue: 0.04, maxValue: 0.35, target: self, action: #selector(delaiCarrouselChangé(_:)))
         delai.isContinuous = true
         delai.frame = NSRect(x: 66, y: 52, width: 290, height: 26)
-        let aide = NSTextField(wrappingLabelWithString: "Vers « Vite » : il apparaît plus tôt, mais un simple effleurement risque de l'afficher. Vers « Tard » : l'inverse.")
+        let aide = NSTextField(wrappingLabelWithString: String(localized: "Vers « Vite » : il apparaît plus tôt, mais un simple effleurement risque de l'afficher. Vers « Tard » : l'inverse."))
         aide.font = .systemFont(ofSize: 11)
         aide.textColor = .secondaryLabelColor
         aide.frame = NSRect(x: 20, y: 12, width: 384, height: 32)
@@ -1845,9 +1845,9 @@ final class Appli: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Touches.retirer(idGrille)
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 380, height: 120), styleMask: [.titled, .closable],
                          backing: .buffered, defer: false)
-        w.title = "Raccourci de Square"
+        w.title = String(localized: "Raccourci de Square")
         w.isReleasedWhenClosed = false
-        let t = NSTextField(wrappingLabelWithString: "Appuyez sur le nouveau raccourci.\nIl faut au moins une touche ⌃ ⌥ ⇧ ou ⌘ (ou une touche F1 à F20).\nÉchap pour annuler.")
+        let t = NSTextField(wrappingLabelWithString: String(localized: "Appuyez sur le nouveau raccourci.\nIl faut au moins une touche ⌃ ⌥ ⇧ ou ⌘ (ou une touche F1 à F20).\nÉchap pour annuler."))
         t.alignment = .center
         t.frame = NSRect(x: 20, y: 20, width: 340, height: 80)
         w.contentView?.addSubview(t)

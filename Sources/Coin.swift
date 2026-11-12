@@ -7,8 +7,9 @@ enum Coin {
         get { UserDefaults.standard.string(forKey: "coinGrille") ?? "hd" }
         set { UserDefaults.standard.set(newValue, forKey: "coinGrille") }
     }
-    static let noms: [(String, String)] = [("hd", "En haut à droite"), ("hg", "En haut à gauche"),
-                                           ("bd", "En bas à droite"), ("bg", "En bas à gauche"), ("aucun", "Aucun")]
+    static let noms: [(String, String)] = [("hd", String(localized: "En haut à droite")), ("hg", String(localized: "En haut à gauche")),
+                                           ("bd", String(localized: "En bas à droite")), ("bg", String(localized: "En bas à gauche")),
+                                           ("aucun", String(localized: "Aucun"))]
     private static var armé = true          // il faut ressortir du coin avant de pouvoir le déclencher de nouveau
     private static var ecoute: Any?
     private static var ecouteLocale: Any?

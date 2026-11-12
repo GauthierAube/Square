@@ -2,6 +2,12 @@
 
 Les dernières modifications sont en haut.
 
+## 12 novembre 2026 (soir) : Square en anglais
+
+- Square s'affiche en anglais sur tout Mac qui n'est pas réglé en français, et reste en français sinon.
+- Réglages › Général › Langue : automatique (langue du Mac), français ou English. Square redémarre pour changer de langue.
+- Les textes viennent d'un catalogue de traduction Apple (`Localizable.xcstrings`), mis à jour à chaque compilation quand Xcode est installé. Les fichiers compilés (`Resources/en.lproj`) sont gardés dans le dépôt, pour compiler sans Xcode.
+
 ## 12 novembre 2026 : première version publique
 
 **La grille**
