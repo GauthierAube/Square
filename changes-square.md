@@ -2,6 +2,11 @@
 
 Les dernières modifications sont en haut.
 
+## 12 novembre 2026 (nuit) : glisser une case entre deux autres
+
+- Dans la grille, lâcher une case dans l'espace entre deux vignettes (ou au bout d'une rangée) la glisse à cet endroit : les autres se poussent. Avant, il ne se passait rien hors d'une vignette.
+- Seule la vignette elle-même sert à échanger (au milieu) ou à partager l'écran (sur un bord).
+
 ## 12 novembre 2026 (soir) : Square en anglais
 
 - Square s'affiche en anglais sur tout Mac qui n'est pas réglé en français, et reste en français sinon.

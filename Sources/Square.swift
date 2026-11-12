@@ -1175,6 +1175,7 @@ final class Grille: NSView {
         guard let de = ordre.firstIndex(where: { $0 === c }), let vers = ordre.firstIndex(where: { $0 === cible }) else { return }
         ordre.remove(at: de)
         ordre.insert(c, at: vers)
+        journal("Square: case glissée du rang %d au rang %d", de + 1, vers + 1)
         for (x, place) in zip(ordre, places) { x.tuile.place = place }
         ordreChange = true
         NSAnimationContext.runAnimationGroup { ctx in
@@ -1248,7 +1249,8 @@ final class Grille: NSView {
         volante?.frame = CGRect(x: p.x - l / 2, y: p.y - h / 2, width: l, height: h)
         depot = nil
         repere.isHidden = true
-        if let cible = cases.first(where: { $0 !== c && $0.frame.contains(p) }) {
+        // Seule la vignette compte comme « sur la case » : l'espace entre deux vignettes sert à glisser la case entre elles.
+        if let cible = cases.first(where: { $0 !== c && $0.cadreVignette.offsetBy(dx: $0.frame.minX, dy: $0.frame.minY).contains(p) }) {
             let v = cible.cadreVignette.offsetBy(dx: cible.frame.minX, dy: cible.frame.minY)
             let rx = (p.x - v.minX) / max(v.width, 1), ry = (p.y - v.minY) / max(v.height, 1)
             var zone = v
@@ -1294,6 +1296,22 @@ final class Grille: NSView {
             repere.isHidden = false
         } else if sortDUnGroupe, !c.frame.contains(p) {
             depot = .separer(nil)          // lâchée n'importe où hors de sa case : elle quitte le groupe
+        } else if !sortDUnGroupe, !c.frame.contains(p) {
+            // Entre deux cases d'une même rangée (ou au bout d'une rangée) : la case transportée s'y glisse, les autres se poussent.
+            let rangee = cases.filter { $0 !== c && p.y >= $0.frame.minY && p.y <= $0.frame.maxY }
+            let gauche = rangee.filter { $0.frame.midX <= p.x }.max { $0.frame.midX < $1.frame.midX }
+            let droite = rangee.filter { $0.frame.midX > p.x }.min { $0.frame.midX < $1.frame.midX }
+            let ordre = cases.sorted { $0.tuile.place < $1.tuile.place }
+            func rang(_ x: Case) -> Int { ordre.firstIndex { $0 === x } ?? 0 }
+            let moi = rang(c)
+            var cible: Case?
+            if let droite, moi > rang(droite) { cible = droite }            // elle vient d'après : elle prend la place de celle de droite
+            else if let gauche, moi < rang(gauche) { cible = gauche }       // elle vient d'avant : elle prend la place de celle de gauche
+            if let cible {
+                CATransaction.commit()
+                inserer(c, aLaPlaceDe: cible)
+                return
+            }
         }
         CATransaction.commit()
     }
