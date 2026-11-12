@@ -289,12 +289,14 @@ enum Agrandir {
         _ = _AXUIElementGetWindow(el, &wid)
         let commun = cadre.intersection(zone)
         let dejà = !commun.isNull && commun.width * commun.height >= 0.9 * zone.width * zone.height
-        if dejà {
-            if !seulementAgrandir, let avant = anciens[wid] { AX.placer(el, avant); anciens[wid] = nil }
+        // Une vidéo aux proportions fixes (QuickTime) n'atteint jamais 90 % de l'écran : déjà suivie sur fond noir, elle compte comme agrandie.
+        if dejà || FondNoir.estSuivie(wid) {
+            if !seulementAgrandir, let avant = anciens[wid] { AX.placer(el, avant); anciens[wid] = nil; FondNoir.oublier(wid) }
         } else {
             anciens[wid] = cadre
             Groupes.retirer(wid)             // agrandie, elle ne partage plus l'écran avec personne
             AX.placer(el, zone)
+            FondNoir.verifier(el, zone: zone)
         }
     }
 

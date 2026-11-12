@@ -2,6 +2,11 @@
 
 Les dernières modifications sont en haut.
 
+## 13 novembre 2026 : les vidéos vraiment en plein écran
+
+- Une application qui garde les proportions de sa fenêtre (une vidéo dans QuickTime) ne remplissait pas tout l'écran une fois agrandie : on voyait les autres applications autour. Square centre maintenant la fenêtre et pose derrière elle un fond noir sur tout l'écran, comme un vrai plein écran.
+- Le fond n'est là que tant que cette fenêtre est devant ; un clic sur le fond la ramène devant ; il disparaît quand on la ferme.
+
 ## 13 novembre 2026 : la vidéo en plein écran de Side
 
 - Quand Side sort une vidéo YouTube de son tiroir en plein écran, Square range sa fenêtre comme celle d'une application : grille, carrousel, ⌘1 à ⌘9, écran partagé. Les autres fenêtres de Side restent ignorées.
