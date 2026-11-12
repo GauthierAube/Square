@@ -37,10 +37,16 @@ enum Coin {
     }
 }
 
-/// La capture d'écran de macOS est-elle en cours ? (Son outil ne tourne que pendant qu'on choisit la zone à capturer.)
+/// Une capture d'écran est-elle en train d'être choisie (⌘⇧4, ⌘⇧5) ? On le voit à la fenêtre de sélection de macOS,
+/// posée au-dessus de tout. (L'outil de capture reste en mémoire quelques secondes après : cela ne compte pas.)
 enum CaptureEcran {
     static var enCours: Bool {
-        NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.apple.screencaptureui" }
-            || !NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.screencaptureui").isEmpty
+        let fenetres = (CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]]) ?? []
+        return fenetres.contains { f in
+            guard ((f[kCGWindowLayer as String] as? Int) ?? 0) >= 100 else { return false }
+            if (f[kCGWindowOwnerName as String] as? String) == "screencapture" { return true }
+            guard let pid = f[kCGWindowOwnerPID as String] as? pid_t else { return false }
+            return NSRunningApplication(processIdentifier: pid)?.bundleIdentifier == "com.apple.screencaptureui"
+        }
     }
 }
