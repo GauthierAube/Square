@@ -2,6 +2,10 @@
 
 # Square
 
+> **Square fait désormais partie de [Side](https://github.com/GauthierAube/Side)** (13 novembre 2026). La grille, le carrousel à quatre doigts, l'agrandissement des fenêtres et l'écran partagé sont dans Side, avec un Finder flottant et un tiroir pour les petites applications. Ce dépôt est archivé : il n'est plus mis à jour.
+>
+> **Square is now part of [Side](https://github.com/GauthierAube/Side)** (November 13, 2026). This repository is archived and no longer updated.
+
 Toutes les fenêtres du Mac en plein écran, sur un seul bureau, et une grille pour passer de l'une à l'autre.
 
 Le plein écran de macOS range chaque app dans un espace à part : on glisse d'un espace à l'autre, on attend l'animation, et aucune autre fenêtre ne peut venir par-dessus. Square fait remplir l'écran aux fenêtres en les laissant sur le même bureau. Changer d'app devient instantané.
